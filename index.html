@@ -75,6 +75,21 @@ textarea.tq{min-height:64px}
 .faqlist p{margin:6px 0 4px;font-size:.88rem;color:var(--fg)}
 .guide details summary,.reveal details summary{cursor:pointer;font-weight:700;color:var(--accent)}
 table.cmp td{font-size:.82rem}table.cmp tr.same td:last-child{color:var(--ok)}table.cmp tr.diff td:last-child{color:var(--bad)}
+.preview{margin:0 0 6px}
+.preview .out{max-height:220px}
+.pv-h{font:600 .72rem var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:2px 0 4px}
+.cmt{color:var(--muted);font-style:italic}.str{color:var(--warn)}
+.nullv{color:var(--muted);font-style:italic}
+.vs{display:grid;gap:14px;margin:14px 0}
+.vs .side{border-left:3px solid var(--line);padding-left:14px;min-width:0}
+.vs .side.a{border-color:var(--warn)}.vs .side.b{border-color:var(--ok)}
+.vs-h{font-weight:700;margin-bottom:4px}
+.vs-why{font-size:.95rem;margin:6px 0 0}
+.takeaways{background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:12px 16px;margin:20px 0}
+.takeaways h3{margin:0 0 6px}
+.takeaways ul{margin:0;padding-left:20px}
+.plain{background:var(--sunk);border-radius:8px;padding:10px 14px;margin:10px 0}
+.plain b:first-child{color:var(--accent)}
 .day.practice{margin-left:6px;border-style:dashed}
 .skills{display:grid;gap:6px}
 .skill{display:grid;grid-template-columns:minmax(0,1fr) minmax(60px,1.2fr) auto;gap:10px;align-items:center;font-size:.92rem}
@@ -224,647 +239,817 @@ countries         -- Day 5+
 <template id="tpl1">
   <div class="eyebrow">Day 1 of 14 · about 75 minutes</div>
   <h2>Pulling rows: SELECT, WHERE, ORDER BY</h2>
-  <p>Today you learn how to ask a database for specific rows from one table. By the end you'll be able to answer questions like "show me every failed SGD transfer over S$1,000 from last month, biggest first". Every query you write at Wise starts with what's on this page.</p>
-  <p class="note">Every grey code box with a <b>Try it</b> button can be run straight away. Click it, look at the result in the console, then change something small and run it again. Changing things and seeing what breaks is the fastest way to learn.</p>
+  <p><b>What you'll learn today:</b> how to ask the database for the rows you want, keep only the ones that matter, and put them in order. By the end you'll be able to answer "show me every failed SGD transfer over S$1,000 last month, biggest first".</p>
+  <p class="note">Every example below shows its <b>real result</b> underneath, straight from the practice data. Read the query, look at the result, and check it does what the explanation says. Click <b>Open in console</b> to copy it to the console on the right, then change something and run it again. Breaking things on purpose is the fastest way to learn.</p>
 
-  <h3>1. What a database table is</h3>
-  <p>A table is like a spreadsheet tab. It has <b>columns</b> (the headings across the top) and <b>rows</b> (one line per record). Our <code>transfers</code> table has one row per money transfer. Here are three rows from it:</p>
-  <div class="tablewrap"><table class="ref">
-    <tr><th>id</th><th>customer_id</th><th>source_currency</th><th>target_currency</th><th>amount</th><th>status</th><th>created_at</th></tr>
-    <tr><td>1</td><td>58</td><td>SGD</td><td>INR</td><td>420.50</td><td>COMPLETED</td><td>2026-03-14 09:12:00</td></tr>
-    <tr><td>2</td><td>7</td><td>MYR</td><td>USD</td><td>1250.00</td><td>FAILED</td><td>2026-03-14 11:40:00</td></tr>
-    <tr><td>3</td><td>58</td><td>SGD</td><td>PHP</td><td>88.20</td><td>PENDING</td><td>2026-10-30 18:05:00</td></tr>
-  </table></div>
-  <p>A few words you'll hear a lot:</p>
+  <h3>1. What a table is</h3>
+  <p>A table is like one tab of a spreadsheet:</p>
   <ul>
-    <li><b>Query</b>: a question you write in SQL. The database answers with a small table called the <b>result</b>.</li>
-    <li><b>Column</b> or <b>field</b>: one kind of information, like <code>amount</code>.</li>
-    <li><b>Row</b> or <b>record</b>: one transfer.</li>
-    <li><b>id</b>: a unique number for each row. No two transfers share an id.</li>
-    <li><b>customer_id</b>: points to a row in the <code>customers</code> table. Customer 58 made transfers 1 and 3. You'll connect the two tables on Day 4.</li>
+    <li><b>Columns</b> are the headings across the top, like <code>amount</code> or <code>status</code>. Each column holds one kind of information.</li>
+    <li><b>Rows</b> are the lines going down. In the <code>transfers</code> table, each row is one money transfer.</li>
   </ul>
-  <p>The full list of columns is in the <b>Tables</b> box beside the console. Keep glancing at it while you work.</p>
+  <p>Here are the first 3 rows of <code>transfers</code>:</p>
+<pre data-try data-rows="3">SELECT * FROM transfers LIMIT 3;</pre>
+  <p>Some words you'll see a lot:</p>
+  <ul>
+    <li><b>Query</b>: a question written in SQL. The database answers with a small table called the <b>result</b>, like the one above.</li>
+    <li><b>id</b>: a number that's different on every row, so you can point at one exact transfer.</li>
+    <li><b>customer_id</b>: the id of the customer who sent it. It points at a row in the <code>customers</code> table. You'll connect the two tables on Day 4.</li>
+  </ul>
+  <p>The full list of columns is in the <b>Tables</b> box on the right. Keep glancing at it.</p>
 
-  <h3>2. Your first query: SELECT and FROM</h3>
-  <p>The smallest useful query has two parts. <code>SELECT</code> says which columns you want. <code>FROM</code> says which table to look in.</p>
-<pre data-try><span class="kw">SELECT</span> id, amount, status
-<span class="kw">FROM</span> transfers;</pre>
-  <p>Read it out loud as plain English: "Select the id, amount and status from transfers." That gives you every row, but only those three columns.</p>
+  <h3>2. SELECT and FROM: choosing columns</h3>
+  <div class="plain"><b>In plain English:</b> "Show me these columns from this table."</div>
+<pre data-try>SELECT id, amount, status
+FROM transfers;</pre>
   <ul>
-    <li>Separate column names with commas. No comma after the last one.</li>
-    <li><code>SELECT *</code> means "all columns". Handy for a first look at a table, but in real work list the columns you need.</li>
-    <li>The semicolon <code>;</code> marks the end of the query.</li>
-    <li>SQL doesn't care about capitals or line breaks. <code>select id from transfers</code> works too. Writing keywords in capitals and putting each part on its own line just makes it easier to read.</li>
+    <li><code>SELECT</code> lists the columns you want, separated by commas. No comma after the last one.</li>
+    <li><code>FROM</code> says which table to look in.</li>
+    <li><code>SELECT *</code> means "every column". Handy for a quick look, like the first example.</li>
+    <li>The <code>;</code> marks the end. Capitals and line breaks don't matter to SQL; they just make it easier for people to read.</li>
   </ul>
-<pre data-try><span class="kw">SELECT</span> *
-<span class="kw">FROM</span> customers;</pre>
+  <p>Notice the result has all 1,500 rows, but only the 3 columns you asked for.</p>
 
   <h3>3. LIMIT: just show me a few</h3>
-  <p>Tables can have millions of rows. <code>LIMIT</code> stops after a set number, which is the polite way to take a first look.</p>
-<pre data-try><span class="kw">SELECT</span> *
-<span class="kw">FROM</span> transfers
-<span class="kw">LIMIT</span> 5;</pre>
-  <p>Without ORDER BY (next section), which 5 rows you get isn't guaranteed. Use LIMIT for peeking, and pair it with ORDER BY when you want "the top 5" of something.</p>
+  <div class="plain"><b>In plain English:</b> "Stop after this many rows."</div>
+<pre data-try>SELECT id, amount, status
+FROM transfers
+LIMIT 5;</pre>
+  <p>Real tables can have millions of rows, so LIMIT is the polite way to take a first look. On its own it gives you <i>some</i> 5 rows, not the "top" 5. For "top 5", you also need to sort, which is section 9.</p>
 
   <h3>4. WHERE: keep only the rows you want</h3>
-  <p><code>WHERE</code> is a filter. For every row, the database checks your condition. If it's true, the row stays. If it's false, the row is dropped.</p>
-<pre data-try><span class="kw">SELECT</span> id, amount, status
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> status = 'FAILED';</pre>
-  <p>Things to notice:</p>
+  <div class="plain"><b>In plain English:</b> "Only keep rows where this is true."</div>
+  <p>The database checks your condition against every row. Rows where it's true stay. Rows where it's false are thrown away.</p>
+<pre data-try>SELECT id, amount, status
+FROM transfers
+WHERE status = 'FAILED';</pre>
+  <p>Look at the status column in the result: every row says FAILED. The other statuses were filtered out.</p>
   <ul>
-    <li>Text values go in <b>single quotes</b>: <code>'FAILED'</code>. Without the quotes, the database thinks FAILED is a column name and gives you an error.</li>
-    <li>Text matching is exact. <code>'Failed'</code> won't match <code>'FAILED'</code>.</li>
+    <li>Text goes in <b>single quotes</b>: <code>'FAILED'</code>. Without quotes, SQL thinks FAILED is a column name.</li>
+    <li>Text must match exactly, including capitals. <code>'failed'</code> finds nothing here.</li>
     <li>Numbers have no quotes: <code>amount &gt; 1000</code>.</li>
-    <li>It's a single <code>=</code> for "equals", not <code>==</code> like in Python.</li>
+    <li>"Equals" is a single <code>=</code>, not <code>==</code>.</li>
   </ul>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">Wrong: no quotes</div>
+<pre data-try data-expect="error">SELECT id, status FROM transfers WHERE status = FAILED;</pre>
+    <p class="vs-why">The database looks for a <i>column</i> called FAILED and gives an error.</p></div>
+    <div class="side b"><div class="vs-h">Right: single quotes</div>
+<pre data-try data-rows="3">SELECT id, status FROM transfers WHERE status = 'FAILED';</pre>
+    <p class="vs-why">Now FAILED is treated as a value to match.</p></div>
+  </div>
   <p>The comparison symbols:</p>
   <div class="tablewrap"><table class="ref">
     <tr><th>Symbol</th><th>Means</th><th>Example</th></tr>
     <tr><td><code>=</code></td><td>equals</td><td><code>source_currency = 'SGD'</code></td></tr>
-    <tr><td><code>&lt;&gt;</code> or <code>!=</code></td><td>does not equal</td><td><code>status &lt;&gt; 'COMPLETED'</code></td></tr>
-    <tr><td><code>&gt;</code>, <code>&lt;</code></td><td>greater than, less than</td><td><code>amount &gt; 1000</code></td></tr>
-    <tr><td><code>&gt;=</code>, <code>&lt;=</code></td><td>greater (or less) than or equal to</td><td><code>amount &gt;= 1000</code> includes 1000 itself</td></tr>
+    <tr><td><code>&lt;&gt;</code></td><td>does not equal</td><td><code>status &lt;&gt; 'COMPLETED'</code></td></tr>
+    <tr><td><code>&gt;</code> / <code>&lt;</code></td><td>more than / less than</td><td><code>amount &gt; 1000</code></td></tr>
+    <tr><td><code>&gt;=</code> / <code>&lt;=</code></td><td>at least / at most (includes the number itself)</td><td><code>amount &gt;= 1000</code> includes exactly 1000</td></tr>
   </table></div>
 
-  <h3>5. Combining conditions: AND, OR, NOT</h3>
-  <p><code>AND</code> means both conditions must be true. Each AND makes the result smaller.</p>
-<pre data-try><span class="kw">SELECT</span> id, source_currency, amount, status
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> status = 'FAILED'
-  <span class="kw">AND</span> source_currency = 'SGD';</pre>
-  <p><code>OR</code> means at least one must be true. Each OR makes the result bigger.</p>
-<pre data-try><span class="kw">SELECT</span> id, status
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> status = 'FAILED'
-   <span class="kw">OR</span> status = 'CANCELLED';</pre>
-  <p><b>The trap.</b> When you mix AND with OR, AND is worked out first, like multiplication before addition in maths. This query looks like "failed transfers to USD or EUR":</p>
-<pre data-try><span class="kw">SELECT</span> id, status, target_currency
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> status = 'FAILED' <span class="kw">AND</span> target_currency = 'USD'
-   <span class="kw">OR</span> target_currency = 'EUR';</pre>
-  <p>But the database reads it as "(failed AND USD) OR (any EUR transfer at all)". Run it and you'll see COMPLETED EUR transfers in the result. Fix it by adding brackets around the OR part:</p>
-<pre data-try><span class="kw">SELECT</span> id, status, target_currency
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> status = 'FAILED'
-  <span class="kw">AND</span> (target_currency = 'USD' <span class="kw">OR</span> target_currency = 'EUR');</pre>
-  <p>Rule of thumb: whenever you mix AND and OR, put brackets in, even if you think you don't need them.</p>
+  <h3>5. AND, OR: more than one condition</h3>
+  <p><b>AND</b> means both must be true, so each AND makes the result <i>smaller</i>:</p>
+<pre data-try>SELECT id, source_currency, amount, status
+FROM transfers
+WHERE status = 'FAILED'
+  AND source_currency = 'SGD';</pre>
+  <p><b>OR</b> means at least one must be true, so each OR makes the result <i>bigger</i>:</p>
+<pre data-try>SELECT id, status
+FROM transfers
+WHERE status = 'FAILED'
+   OR status = 'CANCELLED';</pre>
+  <p><b>The trap:</b> when you mix AND with OR, AND is worked out first, the way × happens before + in maths. Compare these two. They look almost the same:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">Without brackets</div>
+<pre data-try>SELECT id, status, target_currency
+FROM transfers
+WHERE status = 'FAILED' AND target_currency = 'USD'
+   OR target_currency = 'EUR';</pre>
+    <p class="vs-why">This means "(failed AND USD) OR any EUR transfer". Look at the result: COMPLETED EUR transfers sneak in.</p></div>
+    <div class="side b"><div class="vs-h">With brackets</div>
+<pre data-try>SELECT id, status, target_currency
+FROM transfers
+WHERE status = 'FAILED'
+  AND (target_currency = 'USD' OR target_currency = 'EUR');</pre>
+    <p class="vs-why">Now it means "failed, AND going to USD or EUR". Every row is FAILED.</p></div>
+  </div>
+  <p>Rule of thumb: whenever AND and OR appear together, add brackets.</p>
 
   <h3>6. Shortcuts: IN, BETWEEN, LIKE</h3>
-  <p><b>IN</b> checks against a list. It's a tidier OR, and it avoids the trap above:</p>
-<pre data-try><span class="kw">SELECT</span> id, status, target_currency
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> status = 'FAILED'
-  <span class="kw">AND</span> target_currency <span class="kw">IN</span> ('USD', 'EUR');</pre>
-  <p><code>NOT IN</code> is the opposite: everything except the list.</p>
-  <p><b>BETWEEN</b> checks a range, and includes both ends. <code>amount BETWEEN 100 AND 500</code> means the same as <code>amount &gt;= 100 AND amount &lt;= 500</code>.</p>
-<pre data-try><span class="kw">SELECT</span> id, amount
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> source_currency = 'SGD'
-  <span class="kw">AND</span> amount <span class="kw">BETWEEN</span> 100 <span class="kw">AND</span> 500;</pre>
-  <p><b>LIKE</b> matches a text pattern. <code>%</code> stands for "any characters, or none".</p>
+  <p><b>IN</b> checks against a list. It's a tidier way to write several ORs, and it avoids the trap above:</p>
+<pre data-try>SELECT id, status, target_currency
+FROM transfers
+WHERE status = 'FAILED'
+  AND target_currency IN ('USD', 'EUR');</pre>
+  <p>This gives exactly the same rows as the "with brackets" version. <code>NOT IN (...)</code> is the opposite: everything except the list.</p>
+  <p><b>BETWEEN</b> checks a range and includes both ends. <code>BETWEEN 100 AND 500</code> means "100 or more, and 500 or less":</p>
+<pre data-try>SELECT id, amount
+FROM transfers
+WHERE source_currency = 'SGD'
+  AND amount BETWEEN 100 AND 500;</pre>
+  <p><b>LIKE</b> matches a pattern in text. <code>%</code> means "any characters, or none":</p>
   <ul>
-    <li><code>name LIKE 'Tan%'</code>: starts with Tan</li>
-    <li><code>name LIKE '%Tan'</code>: ends with Tan</li>
-    <li><code>name LIKE '%Tan%'</code>: has Tan anywhere</li>
+    <li><code>LIKE 'Tan%'</code>: starts with Tan</li>
+    <li><code>LIKE '%Tan'</code>: ends with Tan</li>
+    <li><code>LIKE '%Tan%'</code>: has Tan anywhere</li>
   </ul>
-<pre data-try><span class="kw">SELECT</span> id, name, country
-<span class="kw">FROM</span> customers
-<span class="kw">WHERE</span> name <span class="kw">LIKE</span> '%Tan%';</pre>
+<pre data-try>SELECT id, name
+FROM customers
+WHERE name LIKE '%Tan';</pre>
 
-  <h3>7. NULL: the empty value</h3>
-  <p>Some cells have no value at all. That's called <b>NULL</b>. It isn't zero and it isn't blank text. It means "unknown" or "doesn't apply". In our data, <code>completed_at</code> is NULL for transfers that never completed, and <code>failure_reason</code> is NULL unless the transfer failed.</p>
-  <p>You can't use <code>=</code> with NULL. <code>completed_at = NULL</code> never matches anything, because "is this unknown thing equal to unknown?" has no answer. Use <code>IS NULL</code> and <code>IS NOT NULL</code> instead:</p>
-<pre data-try><span class="kw">SELECT</span> id, status, completed_at
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> completed_at <span class="kw">IS NULL</span>
-<span class="kw">LIMIT</span> 10;</pre>
+  <h3>7. NULL: when a value is missing</h3>
+  <p>Some cells are empty. In SQL, empty is called <b>NULL</b>. It doesn't mean zero or blank text; it means "no value here". For example, <code>completed_at</code> is NULL for transfers that never completed:</p>
+<pre data-try>SELECT id, status, completed_at
+FROM transfers
+WHERE status = 'FAILED';</pre>
+  <p>To find NULLs you must use <code>IS NULL</code>. Using <code>=</code> doesn't work, because SQL treats NULL as "unknown", and "is unknown equal to unknown?" has no answer:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">Doesn't work</div>
+<pre data-try>SELECT id, completed_at FROM transfers WHERE completed_at = NULL;</pre>
+    <p class="vs-why">No rows, even though there are plenty of NULLs.</p></div>
+    <div class="side b"><div class="vs-h">Works</div>
+<pre data-try data-rows="3">SELECT id, completed_at FROM transfers WHERE completed_at IS NULL;</pre>
+    <p class="vs-why"><code>IS NULL</code> finds them. <code>IS NOT NULL</code> finds the ones that do have a value.</p></div>
+  </div>
 
-  <h3>8. Filtering dates</h3>
-  <p>Dates here are stored as text in the form <code>'YYYY-MM-DD HH:MM:SS'</code>, for example <code>'2026-10-15 14:03:00'</code>. Because the year comes first and every part is padded with zeros, sorting the text alphabetically also sorts it by time. So normal comparisons work.</p>
-  <p>To get everything in October 2026:</p>
-<pre data-try><span class="kw">SELECT</span> id, created_at
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> created_at &gt;= '2026-10-01'
-  <span class="kw">AND</span> created_at &lt; '2026-11-01';</pre>
-  <p>Why <code>&lt; '2026-11-01'</code> and not <code>&lt;= '2026-10-31'</code>? Because <code>'2026-10-31 18:00:00'</code> comes <i>after</i> <code>'2026-10-31'</code> when compared as text, so the second version would miss everything that happened on the last day. Always use "greater than or equal to the start" and "less than the start of the next period". This habit works in every database.</p>
+  <h3>8. Filtering by date</h3>
+  <p>Dates here look like <code>'2026-10-15 14:03:00'</code>: year, month, day, then time. Because the year comes first, sorting them as text also sorts them by time, so normal comparisons work. Everything in October 2026:</p>
+<pre data-try>SELECT id, created_at
+FROM transfers
+WHERE created_at &gt;= '2026-10-01'
+  AND created_at &lt; '2026-11-01';</pre>
+  <p>Why <code>&lt; '2026-11-01'</code> instead of <code>&lt;= '2026-10-31'</code>? Because a transfer at <code>'2026-10-31 18:00:00'</code> counts as <i>after</i> <code>'2026-10-31'</code> when compared as text, so you'd lose everything on the last day. The safe habit: <b>on or after the first day, and before the first day of the next period</b>.</p>
 
-  <h3>9. ORDER BY: sort the result</h3>
-  <p><code>ORDER BY</code> sorts the rows. <code>ASC</code> is smallest first (the default). <code>DESC</code> is largest or newest first.</p>
-<pre data-try><span class="kw">SELECT</span> id, source_currency, amount
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> source_currency = 'SGD'
-<span class="kw">ORDER BY</span> amount <span class="kw">DESC</span>
-<span class="kw">LIMIT</span> 10;</pre>
-  <p>That's "the 10 biggest SGD transfers". You can sort by more than one column. The second one only breaks ties in the first:</p>
-<pre data-try><span class="kw">SELECT</span> id, status, amount
-<span class="kw">FROM</span> transfers
-<span class="kw">ORDER BY</span> status, amount <span class="kw">DESC</span>
-<span class="kw">LIMIT</span> 20;</pre>
-  <p>That sorts by status A to Z, and within each status, biggest amount first.</p>
+  <h3>9. ORDER BY: sorting</h3>
+  <div class="plain"><b>In plain English:</b> "Sort the result by this column."</div>
+<pre data-try>SELECT id, amount
+FROM transfers
+WHERE source_currency = 'SGD'
+ORDER BY amount DESC
+LIMIT 5;</pre>
+  <p><code>DESC</code> means biggest (or latest, or Z) first. Without it you get <code>ASC</code>, smallest first. Combined with LIMIT, this is "the 5 biggest SGD transfers".</p>
+  <p>You can sort by more than one column. The second only matters when the first is tied:</p>
+<pre data-try>SELECT status, amount
+FROM transfers
+ORDER BY status, amount DESC
+LIMIT 8;</pre>
+  <p>Rows are grouped A to Z by status, and within the same status, biggest amount first.</p>
 
-  <h3>10. DISTINCT: remove duplicates</h3>
-  <p><code>SELECT DISTINCT</code> shows each different value once. Useful for "what values exist in this column?"</p>
-<pre data-try><span class="kw">SELECT DISTINCT</span> country
-<span class="kw">FROM</span> customers
-<span class="kw">ORDER BY</span> country;</pre>
-  <p>With more than one column, it removes rows where <i>all</i> the columns repeat. <code>SELECT DISTINCT source_currency, target_currency</code> gives you each currency pair once.</p>
+  <h3>10. DISTINCT: each value once</h3>
+  <p>"Which countries do our customers come from?" Without DISTINCT you'd get 128 rows, one per customer. With it, each country appears once:</p>
+<pre data-try>SELECT DISTINCT country
+FROM customers
+ORDER BY country;</pre>
 
   <h3>11. Putting it together</h3>
-  <p>The parts always go in this order when you write them:</p>
-<pre><span class="kw">SELECT</span>   columns
-<span class="kw">FROM</span>     table
-<span class="kw">WHERE</span>    conditions
-<span class="kw">ORDER BY</span> columns
-<span class="kw">LIMIT</span>    number;</pre>
-  <p>But the database actually works through them in a different order: FROM (find the table), WHERE (drop rows), SELECT (pick columns), ORDER BY (sort), LIMIT (cut). You don't need this today, but it explains a lot of confusing errors later, so remember it exists.</p>
-  <p>A full example, the kind of thing Wise would ask: "the 5 biggest failed SGD transfers in October 2026, and why they failed".</p>
-<pre data-try><span class="kw">SELECT</span>   id, amount, target_currency, failure_reason, created_at
-<span class="kw">FROM</span>     transfers
-<span class="kw">WHERE</span>    status = 'FAILED'
-  <span class="kw">AND</span>    source_currency = 'SGD'
-  <span class="kw">AND</span>    created_at &gt;= '2026-10-01'
-  <span class="kw">AND</span>    created_at &lt; '2026-11-01'
-<span class="kw">ORDER BY</span> amount <span class="kw">DESC</span>
-<span class="kw">LIMIT</span>    5;</pre>
+  <p>You always <b>write</b> the parts in this order:</p>
+<pre class="nohl">SELECT   columns
+FROM     table
+WHERE    conditions
+ORDER BY columns
+LIMIT    number</pre>
+  <p>A full example: "the 5 biggest failed SGD transfers in October 2026, and why they failed":</p>
+<pre data-try>SELECT id, amount, target_currency, failure_reason, created_at
+FROM transfers
+WHERE status = 'FAILED'
+  AND source_currency = 'SGD'
+  AND created_at &gt;= '2026-10-01'
+  AND created_at &lt; '2026-11-01'
+ORDER BY amount DESC
+LIMIT 5;</pre>
 
   <h3>12. Common errors and what they mean</h3>
   <div class="tablewrap"><table class="ref">
     <tr><th>Error says</th><th>Usually means</th></tr>
     <tr><td><code>no such column: FAILED</code></td><td>You forgot the quotes. Write <code>'FAILED'</code>.</td></tr>
-    <tr><td><code>no such column: amout</code></td><td>Typo in a column name. Check the Tables box.</td></tr>
+    <tr><td><code>no such column: amout</code></td><td>A typo in a column name. Check the Tables box.</td></tr>
     <tr><td><code>near "FROM": syntax error</code></td><td>Often a comma after the last column in SELECT.</td></tr>
-    <tr><td><code>incomplete input</code></td><td>A missing closing quote or bracket.</td></tr>
-    <tr><td>No error, but 0 rows</td><td>Check spelling and capitals in your text values, and whether you used <code>= NULL</code>.</td></tr>
+    <tr><td><code>incomplete input</code></td><td>A quote or bracket was opened but never closed.</td></tr>
+    <tr><td>No error, but 0 rows</td><td>Check the spelling and capitals of your text values, and whether you wrote <code>= NULL</code>.</td></tr>
   </table></div>
-  <p class="note">This page runs SQLite. Everything on Day 1 works the same in PostgreSQL, which is what Wise most likely uses. Where the two differ later on, the lesson shows both.</p>
+
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li><code>SELECT</code> picks columns, <code>FROM</code> picks the table, <code>WHERE</code> picks rows.</li>
+    <li>Text in single quotes, matched exactly. Numbers without quotes.</li>
+    <li>Mixing AND with OR? Add brackets, or use IN.</li>
+    <li>Use <code>IS NULL</code>, never <code>= NULL</code>.</li>
+    <li>Date ranges: <code>&gt;=</code> the start, <code>&lt;</code> the start of the next period.</li>
+    <li>"Top N" means <code>ORDER BY … DESC LIMIT N</code>.</li>
+  </ul></div>
 
   <h3>Exercises</h3>
-  <p>Click <b>Work on this</b>, write your query in the console, press <b>Run</b> to see the result, then <b>Check</b>. Column names don't need to match mine, only the values and, where it says so, the order. If you're stuck for more than 5 minutes, use the hint before the answer.</p>
+  <p>Click <b>Work on this</b>, write your query in the console, press <b>Run</b> to see what you get, then <b>Check</b>. Column names don't need to match mine; only the values, and the order where it says so.</p>
   <div class="exlist"></div>
 </template>
 <template id="tpl2">
   <div class="eyebrow">Day 2 of 14 · about 75 minutes</div>
   <h2>Summarising: COUNT, SUM, GROUP BY, HAVING</h2>
-  <p>Yesterday every query returned rows from the table as they are. Today you'll turn thousands of rows into a handful of numbers: how many, how much, what's the average, broken down by currency or by month. This is the bread and butter of operations analysis, and almost every interview question uses it.</p>
+  <p><b>What you'll learn today:</b> how to turn thousands of rows into a few useful numbers. How many transfers? What's the total? What's the average, per currency, per month? This is the core of almost every operations question.</p>
 
   <h3>1. Aggregate functions: many rows in, one number out</h3>
-  <p>An <b>aggregate function</b> takes a whole column of values and squashes them into one. Think of the SUM or AVERAGE you'd put at the bottom of a spreadsheet column.</p>
-<pre data-try><span class="kw">SELECT</span> COUNT(*)
-<span class="kw">FROM</span> transfers;</pre>
-  <p>That returns one row with one number: how many transfers there are. <code>COUNT(*)</code> literally means "count the rows".</p>
+  <p>Yesterday every query returned rows from the table. An <b>aggregate function</b> works differently: it takes a whole column and squashes it into a single number, like the SUM or AVERAGE at the bottom of a spreadsheet column.</p>
+<pre data-try>SELECT COUNT(*)
+FROM transfers;</pre>
+  <p>One row, one number: the count of all rows. <code>COUNT(*)</code> literally means "count the rows".</p>
   <div class="tablewrap"><table class="ref">
-    <tr><th>Function</th><th>What it does</th><th>Example</th></tr>
-    <tr><td><code>COUNT(*)</code></td><td>Counts rows</td><td>How many transfers?</td></tr>
-    <tr><td><code>COUNT(column)</code></td><td>Counts rows where that column is <i>not</i> NULL</td><td><code>COUNT(completed_at)</code> counts finished transfers</td></tr>
-    <tr><td><code>COUNT(DISTINCT column)</code></td><td>Counts different values</td><td><code>COUNT(DISTINCT customer_id)</code>: how many customers</td></tr>
-    <tr><td><code>SUM(column)</code></td><td>Adds them up</td><td>Total fees</td></tr>
-    <tr><td><code>AVG(column)</code></td><td>Average</td><td>Average transfer size</td></tr>
-    <tr><td><code>MIN(column)</code>, <code>MAX(column)</code></td><td>Smallest, largest. Works on dates too.</td><td>First and last transfer date</td></tr>
+    <tr><th>Function</th><th>What it gives you</th></tr>
+    <tr><td><code>COUNT(*)</code></td><td>How many rows</td></tr>
+    <tr><td><code>COUNT(DISTINCT customer_id)</code></td><td>How many <i>different</i> customers</td></tr>
+    <tr><td><code>SUM(amount)</code></td><td>The total</td></tr>
+    <tr><td><code>AVG(amount)</code></td><td>The average</td></tr>
+    <tr><td><code>MIN(...)</code> / <code>MAX(...)</code></td><td>Smallest / largest. On dates: earliest / latest.</td></tr>
   </table></div>
-  <p>You can use several in one query, and combine them with WHERE. WHERE runs first, so it decides which rows get counted:</p>
-<pre data-try><span class="kw">SELECT</span> COUNT(*), SUM(fee), AVG(amount), MIN(created_at), MAX(created_at)
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> source_currency = 'SGD'
-  <span class="kw">AND</span> status = 'COMPLETED';</pre>
+  <p>You can use several at once. WHERE still runs first, so it decides which rows go into the numbers:</p>
+<pre data-try>SELECT COUNT(*), SUM(fee), AVG(amount), MIN(created_at), MAX(created_at)
+FROM transfers
+WHERE source_currency = 'SGD'
+  AND status = 'COMPLETED';</pre>
 
-  <h3>2. Naming and rounding the results: AS and ROUND</h3>
-  <p>The column headings in that last result were ugly, like <code>AVG(amount)</code>. Use <code>AS</code> to give a result column a name. It's called an <b>alias</b>.</p>
-  <p>Averages also come out with lots of decimals. <code>ROUND(value, 2)</code> rounds to 2 decimal places. You can wrap one function inside another.</p>
-<pre data-try><span class="kw">SELECT</span> COUNT(*)              <span class="kw">AS</span> transfers,
-       ROUND(SUM(fee), 2)    <span class="kw">AS</span> total_fees,
-       ROUND(AVG(amount), 2) <span class="kw">AS</span> avg_amount
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> source_currency = 'SGD'
-  <span class="kw">AND</span> status = 'COMPLETED';</pre>
-  <p>Read <code>ROUND(AVG(amount), 2)</code> from the inside out: first average the amounts, then round that to 2 decimals.</p>
+  <h3>2. Tidying the output: AS and ROUND</h3>
+  <p>The headings above are ugly, and the average has too many decimals. <code>AS</code> gives a column a name (an <b>alias</b>), and <code>ROUND(value, 2)</code> rounds to 2 decimal places:</p>
+<pre data-try>SELECT COUNT(*)              AS transfers,
+       ROUND(SUM(fee), 2)    AS total_fees,
+       ROUND(AVG(amount), 2) AS avg_amount
+FROM transfers
+WHERE source_currency = 'SGD'
+  AND status = 'COMPLETED';</pre>
+  <p>Read <code>ROUND(AVG(amount), 2)</code> from the inside out: first average the amounts, then round the answer.</p>
 
-  <h3>3. GROUP BY: one answer per group</h3>
-  <p>So far you get one number for the whole table. Usually you want a number <i>per something</i>: per status, per currency, per customer. That's what <code>GROUP BY</code> does.</p>
-<pre data-try><span class="kw">SELECT</span>   status, COUNT(*) <span class="kw">AS</span> transfers
-<span class="kw">FROM</span>     transfers
-<span class="kw">GROUP BY</span> status;</pre>
-  <p>Here's what happens behind the scenes:</p>
+  <h3>3. COUNT(*) vs COUNT(DISTINCT …)</h3>
+  <p>These answer different questions, and mixing them up is a very common mistake:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">COUNT(*): how many transfers?</div>
+<pre data-try>SELECT COUNT(*) AS transfers
+FROM transfers
+WHERE status = 'FAILED';</pre>
+    <p class="vs-why">Counts every failed transfer, including several from the same customer.</p></div>
+    <div class="side b"><div class="vs-h">COUNT(DISTINCT customer_id): how many customers?</div>
+<pre data-try>SELECT COUNT(DISTINCT customer_id) AS customers
+FROM transfers
+WHERE status = 'FAILED';</pre>
+    <p class="vs-why">A customer with 3 failures counts once. That's why this number is smaller.</p></div>
+  </div>
+
+  <h3>4. GROUP BY: one answer per group</h3>
+  <p>So far you get one number for everything. Usually you want a number <i>per something</i>: per status, per currency, per customer. That's what GROUP BY does.</p>
+  <div class="plain"><b>In plain English:</b> "Sort the rows into piles by this column, then give me one answer per pile."</div>
+<pre data-try>SELECT status, COUNT(*) AS transfers
+FROM transfers
+GROUP BY status;</pre>
+  <p>Behind the scenes:</p>
   <ol>
-    <li>The database sorts all 1,500 rows into piles, one pile per different <code>status</code>. So a COMPLETED pile, a FAILED pile, and so on.</li>
-    <li>It runs <code>COUNT(*)</code> on each pile separately.</li>
-    <li>It returns one row per pile.</li>
+    <li>The database sorts all 1,500 rows into piles, one per different status.</li>
+    <li>It runs COUNT(*) on each pile separately.</li>
+    <li>Each pile becomes one row of the result.</li>
   </ol>
-  <p>A small picture of it, using 6 rows:</p>
-  <div class="tablewrap"><table class="ref">
-    <tr><th>Rows going in</th><th></th><th>Piles</th><th></th><th>Result</th></tr>
-    <tr><td>COMPLETED<br>FAILED<br>COMPLETED<br>PENDING<br>COMPLETED<br>FAILED</td><td>→</td><td>COMPLETED, COMPLETED, COMPLETED<br>FAILED, FAILED<br>PENDING</td><td>→</td><td>COMPLETED | 3<br>FAILED | 2<br>PENDING | 1</td></tr>
-  </table></div>
-  <p>You can group by more than one column. Each different <i>combination</i> becomes a pile:</p>
-<pre data-try><span class="kw">SELECT</span>   source_currency, status, COUNT(*) <span class="kw">AS</span> transfers
-<span class="kw">FROM</span>     transfers
-<span class="kw">GROUP BY</span> source_currency, status
-<span class="kw">ORDER BY</span> source_currency, status;</pre>
+  <p>Compare it with what you'd get without GROUP BY:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">No GROUP BY</div>
+<pre data-try>SELECT COUNT(*) AS transfers
+FROM transfers;</pre>
+    <p class="vs-why">One pile (the whole table), so one row.</p></div>
+    <div class="side b"><div class="vs-h">GROUP BY status</div>
+<pre data-try>SELECT status, COUNT(*) AS transfers
+FROM transfers
+GROUP BY status;</pre>
+    <p class="vs-why">One pile per status, so one row per status. The counts add up to the total on the left.</p></div>
+  </div>
+  <p>Group by two columns and each <i>combination</i> becomes a pile:</p>
+<pre data-try>SELECT source_currency, status, COUNT(*) AS transfers
+FROM transfers
+GROUP BY source_currency, status
+ORDER BY source_currency, status;</pre>
 
-  <h3>4. The golden rule of GROUP BY</h3>
-  <p><b>Every column in SELECT must either be inside an aggregate function, or be listed in GROUP BY.</b></p>
-  <p>Why? After grouping, each pile becomes one row. If you ask for <code>amount</code> without SUM or AVG, the database doesn't know which of the many amounts in that pile to show you.</p>
-<pre><span style="color:var(--muted)">-- Wrong: amount isn't grouped or aggregated</span>
-<span class="kw">SELECT</span> status, amount, COUNT(*) <span class="kw">FROM</span> transfers <span class="kw">GROUP BY</span> status;
+  <h3>5. The golden rule of GROUP BY</h3>
+  <p><b>Every column in SELECT must either be in GROUP BY, or be inside an aggregate like COUNT or SUM.</b></p>
+  <p>Why? After grouping, each pile becomes one row. If you ask for <code>amount</code> on its own, the pile has hundreds of different amounts, and the database doesn't know which one to show. Wrap it in SUM or AVG and it knows what to do.</p>
+  <p class="note">PostgreSQL gives an error if you break this rule. SQLite (this page) quietly shows a random value instead, which is worse because you won't notice. Follow the rule anyway.</p>
 
-<span style="color:var(--muted)">-- Right: amount is summed</span>
-<span class="kw">SELECT</span> status, SUM(amount), COUNT(*) <span class="kw">FROM</span> transfers <span class="kw">GROUP BY</span> status;</pre>
-  <p class="note">PostgreSQL gives you an error for the wrong version. SQLite (this page) quietly picks a random amount and carries on, which is worse because you won't notice. Follow the rule anyway, since the interview will almost certainly use PostgreSQL.</p>
+  <h3>6. Sorting grouped results</h3>
+  <p>You can sort by a count or total, using its alias:</p>
+<pre data-try>SELECT target_currency, COUNT(*) AS transfers
+FROM transfers
+WHERE source_currency = 'SGD'
+GROUP BY target_currency
+ORDER BY transfers DESC, target_currency;</pre>
+  <p>The second sort column, <code>target_currency</code>, breaks ties: if two currencies had the same count, they'd be listed A to Z. Many exercises ask for this so the order is always predictable.</p>
 
-  <h3>5. Sorting grouped results</h3>
-  <p>You can ORDER BY an aggregate or its alias. "Which target currencies get the most SGD transfers?":</p>
-<pre data-try><span class="kw">SELECT</span>   target_currency, COUNT(*) <span class="kw">AS</span> transfers
-<span class="kw">FROM</span>     transfers
-<span class="kw">WHERE</span>    source_currency = 'SGD'
-<span class="kw">GROUP BY</span> target_currency
-<span class="kw">ORDER BY</span> transfers <span class="kw">DESC</span>, target_currency;</pre>
-  <p>The second sort column, <code>target_currency</code>, breaks ties when two currencies have the same count. Several exercises ask for this, so the order is always predictable.</p>
-
-  <h3>6. HAVING: filtering the groups</h3>
-  <p>Say you want only the customers with 18 or more transfers. Your first instinct might be <code>WHERE COUNT(*) &gt;= 18</code>. That gives an error. Here's why.</p>
-  <p>Remember the order the database works in. It's now:</p>
-<pre>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</pre>
-  <p>WHERE runs <i>before</i> the rows are grouped, so the counts don't exist yet. <code>HAVING</code> runs <i>after</i> grouping, so it can see them.</p>
+  <h3>7. WHERE vs HAVING</h3>
+  <p>Both filter, but at different moments:</p>
   <ul>
-    <li><b>WHERE</b> filters individual rows. "Only completed transfers."</li>
-    <li><b>HAVING</b> filters whole groups. "Only customers with 18 or more."</li>
+    <li><b>WHERE</b> filters individual rows <i>before</i> they're put into piles.</li>
+    <li><b>HAVING</b> filters whole piles <i>after</i> they've been counted.</li>
   </ul>
-<pre data-try><span class="kw">SELECT</span>   customer_id, COUNT(*) <span class="kw">AS</span> transfers
-<span class="kw">FROM</span>     transfers
-<span class="kw">WHERE</span>    status = 'COMPLETED'          <span style="color:var(--muted)">-- 1. drop non-completed rows</span>
-<span class="kw">GROUP BY</span> customer_id                   <span style="color:var(--muted)">-- 2. one pile per customer</span>
-<span class="kw">HAVING</span>   COUNT(*) &gt;= 15                <span style="color:var(--muted)">-- 3. keep piles with 15+</span>
-<span class="kw">ORDER BY</span> transfers <span class="kw">DESC</span>;</pre>
-  <p>Notice HAVING uses <code>COUNT(*)</code> again rather than the alias <code>transfers</code>. PostgreSQL doesn't let you use the alias in HAVING, because SELECT hasn't run yet when HAVING runs. Repeating the aggregate always works.</p>
+  <p>So a condition on a count or total ("customers with 18 or more transfers") must go in HAVING, because before grouping, the counts don't exist yet.</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">WHERE can't see counts</div>
+<pre data-try data-expect="error">SELECT customer_id, COUNT(*) AS n
+FROM transfers
+WHERE COUNT(*) &gt;= 18
+GROUP BY customer_id;</pre>
+    <p class="vs-why">Error: at the WHERE stage, nothing has been counted yet.</p></div>
+    <div class="side b"><div class="vs-h">HAVING can</div>
+<pre data-try>SELECT customer_id, COUNT(*) AS n
+FROM transfers
+GROUP BY customer_id
+HAVING COUNT(*) &gt;= 18
+ORDER BY n DESC;</pre>
+    <p class="vs-why">Group first, count, then keep only the piles with 18 or more.</p></div>
+  </div>
+  <p>You can use both in one query: WHERE to pick rows, HAVING to pick groups.</p>
+<pre data-try>SELECT customer_id, COUNT(*) AS completed
+FROM transfers
+WHERE status = 'COMPLETED'      -- 1. keep only completed rows
+GROUP BY customer_id            -- 2. one pile per customer
+HAVING COUNT(*) &gt;= 15           -- 3. keep piles with 15 or more
+ORDER BY completed DESC;</pre>
+  <p>The order the database works in is now: <b>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</b>. Notice HAVING repeats <code>COUNT(*)</code> instead of using the alias: SELECT hasn't run yet when HAVING runs, so PostgreSQL wouldn't know the alias.</p>
 
-  <h3>7. Grouping by month</h3>
-  <p><code>created_at</code> has the full date and time, like <code>'2026-10-15 14:03:00'</code>. If you grouped by it directly, nearly every row would be its own group. You need to cut it down to just the month first.</p>
-  <p><code>substr(text, start, length)</code> takes part of a piece of text. Counting starts at 1, so <code>substr(created_at, 1, 7)</code> means "start at character 1, take 7 characters":</p>
-<pre>2 0 2 6 - 1 0 - 1 5   1 4 : 0 3 : 0 0
-1 2 3 4 5 6 7
-└──── '2026-10' ────┘</pre>
+  <h3>8. Grouping by month</h3>
+  <p><code>created_at</code> is the full date and time, so grouping by it directly gives nearly one pile per row. You need just the month. <code>substr(text, start, length)</code> cuts out part of the text. <code>substr(created_at, 1, 7)</code> means "start at character 1, take 7 characters":</p>
+<pre class="nohl">'2026-10-15 14:03:00'
+ 1234567
+ └─────┘ → '2026-10'</pre>
   <p>Every October 2026 transfer becomes <code>'2026-10'</code>, so they all land in the same pile:</p>
-<pre data-try><span class="kw">SELECT</span>   substr(created_at, 1, 7) <span class="kw">AS</span> month,
-         COUNT(*) <span class="kw">AS</span> transfers
-<span class="kw">FROM</span>     transfers
-<span class="kw">GROUP BY</span> month
-<span class="kw">ORDER BY</span> month;</pre>
-  <p>Other cuts using the same idea: <code>substr(created_at, 1, 4)</code> for year, <code>substr(created_at, 1, 10)</code> for day.</p>
-  <p>In PostgreSQL, dates are real date values rather than text, and you'd write this instead:</p>
-<pre><span class="kw">SELECT</span>   DATE_TRUNC('month', created_at) <span class="kw">AS</span> month, COUNT(*)
-<span class="kw">FROM</span>     transfers
-<span class="kw">GROUP BY</span> 1
-<span class="kw">ORDER BY</span> 1;</pre>
-  <p><code>GROUP BY 1</code> means "group by the 1st column in SELECT". It saves retyping long expressions and is common in analyst work.</p>
+<pre data-try>SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS transfers
+FROM transfers
+GROUP BY month
+ORDER BY month;</pre>
+  <p class="note">In PostgreSQL you'd write <code>DATE_TRUNC('month', created_at)</code> instead, because dates are real date values there rather than text.</p>
 
-  <h3>8. A money trap: don't mix currencies</h3>
-  <p>Our <code>amount</code> column is in the <i>source</i> currency. Some rows are SGD, some are IDR, where 1 SGD is about 12,000 IDR. Running <code>SUM(amount)</code> across all of them adds SGD to rupiah, which gives a meaningless number.</p>
-  <p>When you add up money, either filter to one currency, or group by currency so each total stays separate:</p>
-<pre data-try><span class="kw">SELECT</span>   source_currency, ROUND(SUM(amount), 2) <span class="kw">AS</span> total_sent
-<span class="kw">FROM</span>     transfers
-<span class="kw">WHERE</span>    status = 'COMPLETED'
-<span class="kw">GROUP BY</span> source_currency;</pre>
-  <p>Spotting traps like this in an interview, and saying so out loud, scores points. It shows you think about what the numbers mean, not just whether the query runs.</p>
+  <h3>9. A money trap: don't add up different currencies</h3>
+  <p><code>amount</code> is in the source currency. Some rows are SGD, some are IDR (where S$1 is about Rp12,000). Adding them together gives a meaningless number. Group by currency so each total stays separate:</p>
+<pre data-try>SELECT source_currency, ROUND(SUM(amount), 2) AS total_sent
+FROM transfers
+WHERE status = 'COMPLETED'
+GROUP BY source_currency;</pre>
+  <p>Look at the IDR total next to the SGD one: you can see why mixing them would be nonsense. On Day 5 you'll convert everything to SGD properly.</p>
 
-  <h3>9. Common errors and what they mean</h3>
+  <h3>10. Common errors</h3>
   <div class="tablewrap"><table class="ref">
     <tr><th>Problem</th><th>Usually means</th></tr>
-    <tr><td><code>misuse of aggregate: COUNT()</code></td><td>You put an aggregate in WHERE. Move that condition to HAVING.</td></tr>
-    <tr><td>One row per transfer instead of per group</td><td>You grouped by a column that's different on every row, like <code>id</code> or full <code>created_at</code>.</td></tr>
-    <tr><td>Strange or random values in a column</td><td>That column isn't in GROUP BY or inside an aggregate. Check the golden rule.</td></tr>
-    <tr><td>Count looks too big</td><td>Did you need <code>COUNT(DISTINCT customer_id)</code> instead of <code>COUNT(*)</code>?</td></tr>
+    <tr><td><code>misuse of aggregate: COUNT()</code></td><td>An aggregate in WHERE. Move that condition to HAVING.</td></tr>
+    <tr><td>One row per transfer instead of per group</td><td>You grouped by something different on every row, like <code>id</code> or the full <code>created_at</code>.</td></tr>
+    <tr><td>Odd values in a column</td><td>That column isn't in GROUP BY or inside an aggregate. Check the golden rule.</td></tr>
+    <tr><td>Count looks too big</td><td>Did you need <code>COUNT(DISTINCT …)</code>?</td></tr>
   </table></div>
 
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li>Aggregates (COUNT, SUM, AVG, MIN, MAX) turn many rows into one number.</li>
+    <li>GROUP BY gives one number per group. Ask "one row per what?" to know what to group by.</li>
+    <li>Every SELECT column is either grouped or aggregated.</li>
+    <li>WHERE filters rows before grouping; HAVING filters groups after.</li>
+    <li>Never add up amounts in different currencies.</li>
+  </ul></div>
+
   <h3>Exercises</h3>
-  <p>Same as yesterday: <b>Work on this</b>, write, <b>Run</b>, <b>Check</b>. Before writing each one, say to yourself what one row of the answer represents: "one row per status", "one row per customer". That tells you what goes in GROUP BY.</p>
+  <p>Before each one, say to yourself what one row of the answer stands for ("one row per status", "one row per customer"). That tells you what goes in GROUP BY.</p>
   <div class="exlist"></div>
 </template>
-<template id="tpl3">  <div class="eyebrow">Day 3 of 14 · about 75 minutes</div>
+<template id="tpl3">
+  <div class="eyebrow">Day 3 of 14 · about 75 minutes</div>
   <h2>CASE WHEN and rates</h2>
-  <p>Most operations questions are really about rates: what percentage failed, what share was cancelled, which corridor is worse than average. Today you learn the two tools behind every rate: <code>CASE WHEN</code>, which labels or picks out rows, and the percentage pattern built on top of it.</p>
+  <p><b>What you'll learn today:</b> how to label rows, how to count only certain rows without throwing the rest away, and how to turn counts into rates like "8% of transfers failed". Rates are what operations teams watch every day, so this is one of the most useful lessons in the course.</p>
 
-  <h3>1. CASE WHEN: if/else for each row</h3>
-  <p><code>CASE</code> looks at each row and gives back a value depending on a condition. It's the SQL version of an IF formula in a spreadsheet.</p>
-<pre data-try><span class="kw">SELECT</span> id, amount,
-       <span class="kw">CASE</span>
-         <span class="kw">WHEN</span> amount &lt; 100  <span class="kw">THEN</span> 'small'
-         <span class="kw">WHEN</span> amount &lt; 1000 <span class="kw">THEN</span> 'medium'
-         <span class="kw">ELSE</span> 'large'
-       <span class="kw">END AS</span> size
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> source_currency = 'SGD'
-<span class="kw">LIMIT</span> 20;</pre>
+  <h3>1. CASE WHEN: an if/else for each row</h3>
+  <div class="plain"><b>In plain English:</b> "For each row, if this is true, show this; otherwise show that."</div>
+  <p>It works like an IF formula in a spreadsheet. Here every SGD transfer gets a size label:</p>
+<pre data-try>SELECT id, amount,
+       CASE
+         WHEN amount &lt; 100  THEN 'small'
+         WHEN amount &lt; 1000 THEN 'medium'
+         ELSE 'large'
+       END AS size
+FROM transfers
+WHERE source_currency = 'SGD';</pre>
+  <p>Check the result: amounts under 100 say small, under 1,000 say medium, the rest say large.</p>
   <ul>
-    <li>It checks each <code>WHEN</code> from top to bottom and <b>stops at the first one that's true</b>. That's why the second line only needs <code>amount &lt; 1000</code>: anything under 100 was already caught by the first line.</li>
-    <li><code>ELSE</code> catches everything left over. Without ELSE, unmatched rows get NULL.</li>
-    <li>Always finish with <code>END</code>, and give it a name with <code>AS</code>.</li>
+    <li>The database checks each <code>WHEN</code> from top to bottom and <b>stops at the first one that's true</b>. That's why the second line only needs <code>amount &lt; 1000</code>: anything under 100 was already caught by the first line.</li>
+    <li><code>ELSE</code> catches everything left. Without it, unmatched rows get NULL.</li>
+    <li>Always finish with <code>END</code>, and name it with <code>AS</code>.</li>
   </ul>
 
-  <h3>2. Grouping by a CASE label</h3>
-  <p>Once a CASE has an alias, you can group by it just like a real column:</p>
-<pre data-try><span class="kw">SELECT</span> <span class="kw">CASE WHEN</span> amount &lt; 100 <span class="kw">THEN</span> 'small' <span class="kw">WHEN</span> amount &lt; 1000 <span class="kw">THEN</span> 'medium' <span class="kw">ELSE</span> 'large' <span class="kw">END AS</span> size,
-       COUNT(*) <span class="kw">AS</span> transfers
-<span class="kw">FROM</span> transfers
-<span class="kw">WHERE</span> source_currency = 'SGD'
-<span class="kw">GROUP BY</span> size;</pre>
-  <p class="note">PostgreSQL also accepts the alias in GROUP BY. If an older database complains, use <code>GROUP BY 1</code> (the first column) instead.</p>
+  <h3>2. Grouping by a label</h3>
+  <p>Once a CASE has a name, you can group by it like any column. "How many SGD transfers are small, medium and large?":</p>
+<pre data-try>SELECT CASE WHEN amount &lt; 100 THEN 'small'
+            WHEN amount &lt; 1000 THEN 'medium'
+            ELSE 'large' END AS size,
+       COUNT(*) AS transfers
+FROM transfers
+WHERE source_currency = 'SGD'
+GROUP BY size;</pre>
 
-  <h3>3. Counting only some rows: SUM(CASE WHEN ... THEN 1 ELSE 0 END)</h3>
-  <p>This is the single most useful pattern in operations SQL. Inside SUM, the CASE turns each row into a 1 (counts) or a 0 (doesn't). Adding them up counts only the rows that match.</p>
-<pre data-try><span class="kw">SELECT</span> COUNT(*) <span class="kw">AS</span> total,
-       SUM(<span class="kw">CASE WHEN</span> status = 'FAILED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>)    <span class="kw">AS</span> failed,
-       SUM(<span class="kw">CASE WHEN</span> status = 'CANCELLED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) <span class="kw">AS</span> cancelled
-<span class="kw">FROM</span> transfers;</pre>
-  <p>Why not just <code>WHERE status = 'FAILED'</code>? Because WHERE throws the other rows away, and then you can't count them in the same query. Conditional counts let you put several counts side by side, which is exactly what a rate needs: the part and the whole together.</p>
-  <p class="note">PostgreSQL has a shorter form: <code>COUNT(*) FILTER (WHERE status = 'FAILED')</code>. It's worth knowing, but the SUM(CASE...) version works in every database, so it's the safe one for interviews.</p>
+  <h3>3. Counting only some rows</h3>
+  <p>Here's a common question: <i>"How many transfers are there in total, and how many of them failed?"</i></p>
+  <p>Your first instinct might be WHERE. Let's see why that doesn't work for this question.</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">Using WHERE</div>
+<pre data-try>SELECT COUNT(*) AS failed
+FROM transfers
+WHERE status = 'FAILED';</pre>
+    <p class="vs-why">This gets the failed count. But WHERE threw every other row away before counting, so the total is gone. To get the total you'd need a second query, and to compare them you'd have to do the maths by hand.</p></div>
+    <div class="side b"><div class="vs-h">Using a conditional count</div>
+<pre data-try>SELECT COUNT(*) AS total,
+       SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) AS failed
+FROM transfers;</pre>
+    <p class="vs-why">No WHERE, so all rows stay. COUNT(*) counts all of them, and the SUM(CASE…) counts just the failed ones. Both numbers in one row.</p></div>
+  </div>
+  <p><b>How the conditional count works.</b> The CASE turns each row into a 1 or a 0: 1 if it's failed, 0 if not. SUM then adds them up. Adding up 1s for failed rows and 0s for the rest gives you... the number of failed rows. Picture five rows:</p>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>status</th><th>CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END</th></tr>
+    <tr><td>COMPLETED</td><td>0</td></tr>
+    <tr><td>FAILED</td><td>1</td></tr>
+    <tr><td>COMPLETED</td><td>0</td></tr>
+    <tr><td>FAILED</td><td>1</td></tr>
+    <tr><td>CANCELLED</td><td>0</td></tr>
+    <tr><td><b>SUM</b></td><td><b>2</b> failed, out of 5 rows</td></tr>
+  </table></div>
+  <p>Because nothing is thrown away, you can put several of these side by side, one per thing you want to count:</p>
+<pre data-try>SELECT COUNT(*) AS total,
+       SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed,
+       SUM(CASE WHEN status = 'FAILED'    THEN 1 ELSE 0 END) AS failed,
+       SUM(CASE WHEN status = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled
+FROM transfers;</pre>
+  <p><b>When to use which:</b> use WHERE when you only care about the matching rows. Use a conditional count when you need the matching rows <i>and</i> something else (like the total) in the same result. Rates always need both, which is why the next section uses conditional counts.</p>
+  <p class="note">PostgreSQL has a shorter way to write this: <code>COUNT(*) FILTER (WHERE status = 'FAILED')</code>. The SUM(CASE…) version works in every database, so it's the safe one to use in interviews.</p>
 
   <h3>4. Turning counts into a rate</h3>
-  <p>A rate is part ÷ whole × 100. In SQL:</p>
-<pre data-try><span class="kw">SELECT</span> ROUND(SUM(<span class="kw">CASE WHEN</span> status = 'FAILED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) * 100.0 / COUNT(*), 1) <span class="kw">AS</span> failure_rate
-<span class="kw">FROM</span> transfers;</pre>
-  <p>Read it from the inside out: count the failures, multiply by 100.0, divide by the total, round to 1 decimal.</p>
-  <p><b>Why 100.0 and not 100?</b> When both sides of a division are whole numbers, SQL does whole-number division and throws the decimals away. 115 / 1500 gives <b>0</b>, not 0.0767. Writing <code>100.0</code> makes the calculation decimal from the start. Try the broken version:</p>
-<pre data-try><span class="kw">SELECT</span> SUM(<span class="kw">CASE WHEN</span> status = 'FAILED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) / COUNT(*) <span class="kw">AS</span> broken_rate
-<span class="kw">FROM</span> transfers;</pre>
+  <p>A rate answers "out of all of them, how many?" It's <b>part ÷ whole × 100</b>. A raw count can mislead: 18 failures sounds worse than 4, but not if the 18 are out of 900 (2%) and the 4 are out of 26 (15%). Rates make groups of different sizes comparable.</p>
+  <p>The part is the conditional count, and the whole is COUNT(*):</p>
+<pre data-try>SELECT COUNT(*) AS total,
+       SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) AS failed,
+       ROUND(SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) AS failure_rate
+FROM transfers;</pre>
+  <p>Read the rate from the inside out: count the failures, × 100.0, ÷ the total, round to 1 decimal. Check it against the first two columns with a calculator.</p>
 
-  <h3>5. Rates per group</h3>
-  <p>Add GROUP BY and you get a rate for every group. This is the "which corridor is worst?" query interviewers love:</p>
-<pre data-try><span class="kw">SELECT</span>   source_currency,
-         COUNT(*) <span class="kw">AS</span> transfers,
-         ROUND(SUM(<span class="kw">CASE WHEN</span> status = 'FAILED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) * 100.0 / COUNT(*), 1) <span class="kw">AS</span> failure_rate
-<span class="kw">FROM</span>     transfers
-<span class="kw">GROUP BY</span> source_currency
-<span class="kw">ORDER BY</span> failure_rate <span class="kw">DESC</span>;</pre>
-  <p>Always show the count next to a rate. A 20% failure rate on 5 transfers means very little; on 500 it's a real problem. Saying this out loud in an interview shows good judgement.</p>
+  <h3>5. Why 100.0 and not 100</h3>
+  <p>When both sides of a division are whole numbers, SQL does whole-number division and throws the decimals away. So 115 ÷ 1500 becomes 0, not 0.0767. Writing <code>100.0</code> makes the calculation use decimals from the start:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">Whole numbers only</div>
+<pre data-try>SELECT SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) * 100 / COUNT(*) AS rate
+FROM transfers;</pre>
+    <p class="vs-why">The decimals are chopped off, so you only see a whole number.</p></div>
+    <div class="side b"><div class="vs-h">With 100.0</div>
+<pre data-try>SELECT SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) AS rate
+FROM transfers;</pre>
+    <p class="vs-why">The full answer, decimals included.</p></div>
+  </div>
 
-  <h3>6. Filtering on a rate</h3>
-  <p>A rate is calculated from groups, so filtering on it is a HAVING job. In PostgreSQL you must repeat the calculation in HAVING, because the alias doesn't exist yet when HAVING runs:</p>
-<pre data-try><span class="kw">SELECT</span>   target_currency, COUNT(*) <span class="kw">AS</span> transfers,
-         ROUND(SUM(<span class="kw">CASE WHEN</span> status = 'FAILED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) * 100.0 / COUNT(*), 1) <span class="kw">AS</span> failure_rate
-<span class="kw">FROM</span>     transfers
-<span class="kw">GROUP BY</span> target_currency
-<span class="kw">HAVING</span>   COUNT(*) &gt;= 50
-   <span class="kw">AND</span>   SUM(<span class="kw">CASE WHEN</span> status = 'FAILED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) * 100.0 / COUNT(*) &gt; 7
-<span class="kw">ORDER BY</span> failure_rate <span class="kw">DESC</span>;</pre>
-  <p>Repeating a long expression feels clumsy. On Day 8 you'll learn CTEs, which fix this neatly.</p>
+  <h3>6. A rate per group</h3>
+  <p>Add GROUP BY and you get a rate for every group. This is the classic "which one is worst?" query:</p>
+<pre data-try>SELECT source_currency,
+       COUNT(*) AS transfers,
+       ROUND(SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) AS failure_rate
+FROM transfers
+GROUP BY source_currency
+ORDER BY failure_rate DESC;</pre>
+  <p>Always show the count next to the rate. A high rate from a handful of transfers might just be bad luck; the same rate from hundreds is a real problem. Pointing that out in an interview shows good judgement.</p>
 
-  <h3>7. Common errors</h3>
-  <div class="tablewrap"><table class="ref">
-    <tr><th>Problem</th><th>Usually means</th></tr>
-    <tr><td>Every rate is 0</td><td>Whole-number division. Use <code>100.0</code>.</td></tr>
-    <tr><td>Labels are NULL for some rows</td><td>No ELSE, and those rows didn't match any WHEN.</td></tr>
-    <tr><td>Everything lands in the first label</td><td>Your WHEN lines are in the wrong order. Put the narrowest conditions first.</td></tr>
-    <tr><td><code>near "END": syntax error</code> or similar</td><td>A missing <code>THEN</code> or <code>END</code>.</td></tr>
-    <tr><td>Rate looks right but the count is tiny</td><td>Not an error, but say so. Small groups give unreliable rates.</td></tr>
-  </table></div>
-
-  <h3>Exercises</h3>
-  <p>Before each one, decide: is this a label (plain CASE), a count of some rows (SUM of CASE), or a rate (that count × 100.0 ÷ COUNT(*))?</p>
-  <div class="exlist"></div>
-</template>
-<template id="tpl4">  <div class="eyebrow">Day 4 of 14 · about 80 minutes</div>
-  <h2>JOINs: combining two tables</h2>
-  <p>So far every query used one table. But the customer's name and country live in <code>customers</code>, while the money lives in <code>transfers</code>. A JOIN puts them side by side. Joins are the topic interviewers probe most, so take your time today.</p>
-
-  <h3>1. How the two tables connect</h3>
-  <p>Every transfer has a <code>customer_id</code>. That number matches the <code>id</code> of one row in <code>customers</code>. That shared value is the link, and it's called a <b>key</b>. (Example rows, to show the idea.)</p>
-  <div class="tablewrap"><table class="ref">
-    <tr><th colspan="3">transfers</th><th></th><th colspan="3">customers</th></tr>
-    <tr><td><b>id</b></td><td><b>customer_id</b></td><td><b>amount</b></td><td></td><td><b>id</b></td><td><b>name</b></td><td><b>country</b></td></tr>
-    <tr><td>1</td><td>58</td><td>420.50</td><td>→</td><td>58</td><td>Ken Ng</td><td>SG</td></tr>
-    <tr><td>2</td><td>7</td><td>1250.00</td><td>→</td><td>7</td><td>Siti Lim</td><td>MY</td></tr>
-    <tr><td>3</td><td>58</td><td>88.20</td><td>→</td><td>58</td><td>Ken Ng</td><td>SG</td></tr>
-  </table></div>
-  <p>One customer can have many transfers, but each transfer belongs to exactly one customer. That's called a <b>one-to-many</b> relationship, and it's the most common kind.</p>
-
-  <h3>2. Your first JOIN</h3>
-<pre data-try><span class="kw">SELECT</span> t.id, c.name, c.country, t.amount
-<span class="kw">FROM</span>   transfers t
-<span class="kw">JOIN</span>   customers c <span class="kw">ON</span> c.id = t.customer_id
-<span class="kw">LIMIT</span>  10;</pre>
-  <ul>
-    <li><code>transfers t</code> gives the table a short nickname, called an <b>alias</b>. Now <code>t.amount</code> means "amount from transfers".</li>
-    <li><code>JOIN customers c ON c.id = t.customer_id</code> says: for each transfer, find the customer whose id equals the transfer's customer_id, and stick their columns onto the row.</li>
-    <li>Both tables have an <code>id</code> column, so you <b>must</b> say which one you mean: <code>t.id</code> or <code>c.id</code>. Writing just <code>id</code> gives "ambiguous column name".</li>
-  </ul>
-  <p>Get into the habit of putting the table alias on <i>every</i> column once you join. It makes the query easier to read and avoids surprises.</p>
-
-  <h3>3. Filtering and grouping after a join</h3>
-  <p>After joining, the result behaves like one wide table. WHERE, GROUP BY and everything else work as before, on columns from either side:</p>
-<pre data-try><span class="kw">SELECT</span>   c.country, COUNT(*) <span class="kw">AS</span> transfers, ROUND(AVG(t.amount), 2) <span class="kw">AS</span> avg_amount
-<span class="kw">FROM</span>     transfers t
-<span class="kw">JOIN</span>     customers c <span class="kw">ON</span> c.id = t.customer_id
-<span class="kw">WHERE</span>    t.source_currency = 'SGD'
-<span class="kw">GROUP BY</span> c.country;</pre>
-  <p>The reading order now starts with the join: FROM and JOIN build the combined rows first, then WHERE, GROUP BY and the rest work on them.</p>
-
-  <h3>4. INNER JOIN drops rows with no match</h3>
-  <p>A plain <code>JOIN</code> is short for <code>INNER JOIN</code>. It only keeps rows that found a match on both sides. We have 8 new customers who haven't sent anything yet. An inner join from customers to transfers silently leaves them out:</p>
-<pre data-try><span class="kw">SELECT</span> COUNT(DISTINCT c.id) <span class="kw">AS</span> customers_in_result
-<span class="kw">FROM</span>   customers c
-<span class="kw">JOIN</span>   transfers t <span class="kw">ON</span> t.customer_id = c.id;</pre>
-  <p>That gives 120, not 128. Usually that's what you want. When it isn't, you need a LEFT JOIN.</p>
-
-  <h3>5. LEFT JOIN keeps everything on the left</h3>
-  <p><code>LEFT JOIN</code> keeps <i>every</i> row from the first (left) table. Where there's no match, the columns from the right table are filled with NULL.</p>
-<pre data-try><span class="kw">SELECT</span>    c.id, c.name, t.id <span class="kw">AS</span> transfer_id
-<span class="kw">FROM</span>      customers c
-<span class="kw">LEFT JOIN</span> transfers t <span class="kw">ON</span> t.customer_id = c.id
-<span class="kw">WHERE</span>     c.id &gt;= 119
-<span class="kw">ORDER BY</span>  c.id;</pre>
-  <p>Customers 121 to 128 appear once each with an empty transfer_id. That gives you a neat trick for "who has <i>no</i> transfers?": LEFT JOIN, then keep only the rows where the right side is NULL.</p>
-<pre data-try><span class="kw">SELECT</span>    c.id, c.name
-<span class="kw">FROM</span>      customers c
-<span class="kw">LEFT JOIN</span> transfers t <span class="kw">ON</span> t.customer_id = c.id
-<span class="kw">WHERE</span>     t.id <span class="kw">IS NULL</span>;</pre>
-
-  <h3>6. Counting with a LEFT JOIN: COUNT(t.id), not COUNT(*)</h3>
-  <p>For "how many transfers does each customer have, including zero", use LEFT JOIN and count a column from the right table:</p>
-<pre data-try><span class="kw">SELECT</span>    c.id, c.name, COUNT(t.id) <span class="kw">AS</span> transfers
-<span class="kw">FROM</span>      customers c
-<span class="kw">LEFT JOIN</span> transfers t <span class="kw">ON</span> t.customer_id = c.id
-<span class="kw">GROUP BY</span>  c.id, c.name
-<span class="kw">ORDER BY</span>  transfers
-<span class="kw">LIMIT</span>     10;</pre>
-  <p><code>COUNT(*)</code> would give the new customers a count of 1, because their single row (full of NULLs) is still a row. <code>COUNT(t.id)</code> skips NULLs, so they correctly get 0.</p>
-
-  <h3>7. Where you put a condition matters with LEFT JOIN</h3>
-  <p>If you want "every customer and their number of <i>failed</i> transfers", the status condition goes in the <b>ON</b> clause, not WHERE:</p>
-<pre data-try><span class="kw">SELECT</span>    c.id, c.name, COUNT(t.id) <span class="kw">AS</span> failed
-<span class="kw">FROM</span>      customers c
-<span class="kw">LEFT JOIN</span> transfers t <span class="kw">ON</span> t.customer_id = c.id <span class="kw">AND</span> t.status = 'FAILED'
-<span class="kw">GROUP BY</span>  c.id, c.name
-<span class="kw">ORDER BY</span>  failed, c.id
-<span class="kw">LIMIT</span>     10;</pre>
-  <p>Put <code>t.status = 'FAILED'</code> in WHERE instead and every customer with no failures disappears, because their t.status is NULL and NULL never equals 'FAILED'. The LEFT JOIN quietly turns back into an inner join. This is a classic interview trap.</p>
+  <h3>7. Filtering on a rate</h3>
+  <p>A rate is worked out from a group, so filtering on it is a HAVING job. In PostgreSQL you repeat the calculation in HAVING, because the alias doesn't exist yet at that stage:</p>
+<pre data-try>SELECT target_currency, COUNT(*) AS transfers,
+       ROUND(SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) AS failure_rate
+FROM transfers
+GROUP BY target_currency
+HAVING COUNT(*) &gt;= 50
+   AND SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) &gt; 7
+ORDER BY failure_rate DESC;</pre>
+  <p>Repeating a long formula is clumsy. On Day 8 you'll learn CTEs, which let you calculate it once and refer to it by name.</p>
 
   <h3>8. Common errors</h3>
   <div class="tablewrap"><table class="ref">
     <tr><th>Problem</th><th>Usually means</th></tr>
-    <tr><td><code>ambiguous column name: id</code></td><td>Both tables have that column. Write <code>t.id</code> or <code>c.id</code>.</td></tr>
-    <tr><td>Far more rows than expected</td><td>The ON condition is wrong or missing, so rows matched many times. Check you joined on the key.</td></tr>
-    <tr><td>Some customers are missing</td><td>Inner JOIN drops non-matches. Use LEFT JOIN.</td></tr>
-    <tr><td>LEFT JOIN acts like a JOIN</td><td>A WHERE condition on the right table removed the NULL rows. Move it into ON.</td></tr>
-    <tr><td>Customers with nothing show a count of 1</td><td>Use <code>COUNT(t.id)</code>, not <code>COUNT(*)</code>.</td></tr>
+    <tr><td>Every rate is 0</td><td>Whole-number division. Use <code>100.0</code>.</td></tr>
+    <tr><td>The total and the failed count are the same</td><td>You used WHERE status = 'FAILED', so only failed rows were left to count.</td></tr>
+    <tr><td>Some labels are NULL</td><td>No ELSE, and those rows matched no WHEN.</td></tr>
+    <tr><td>Everything lands in one label</td><td>Your WHEN lines are in the wrong order. Narrowest first.</td></tr>
   </table></div>
 
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li><code>CASE WHEN … THEN … ELSE … END</code> labels each row; the first true WHEN wins.</li>
+    <li><code>SUM(CASE WHEN condition THEN 1 ELSE 0 END)</code> counts matching rows while keeping all rows.</li>
+    <li>WHERE removes rows; a conditional count doesn't. Rates need the conditional count.</li>
+    <li>Rate = part × 100.0 ÷ whole. The <code>.0</code> matters.</li>
+    <li>Show the count next to any rate.</li>
+  </ul></div>
+
   <h3>Exercises</h3>
-  <p>For each one, ask: which table has the columns I need? Do I need to keep rows that have no match (LEFT) or not (JOIN)?</p>
+  <p>For each one, decide first: is it a <b>label</b> (plain CASE), a <b>count of some rows</b> (SUM of CASE), or a <b>rate</b> (that count × 100.0 ÷ COUNT(*))?</p>
   <div class="exlist"></div>
 </template>
-<template id="tpl5">  <div class="eyebrow">Day 5 of 14 · about 70 minutes</div>
+<template id="tpl4">
+  <div class="eyebrow">Day 4 of 14 · about 80 minutes</div>
+  <h2>JOINs: combining two tables</h2>
+  <p><b>What you'll learn today:</b> how to bring two tables together. The customer's name and country live in <code>customers</code>; the money lives in <code>transfers</code>. A JOIN puts them on the same row. Joins come up in nearly every interview, so take your time.</p>
+
+  <h3>1. How the two tables connect</h3>
+  <p>Every transfer has a <code>customer_id</code>. That number matches the <code>id</code> of exactly one customer. Look at transfer rows and then the matching customer:</p>
+<pre data-try data-rows="3">SELECT id, customer_id, amount FROM transfers WHERE customer_id = 58 LIMIT 3;</pre>
+<pre data-try>SELECT id, name, country FROM customers WHERE id = 58;</pre>
+  <p>All three transfers have customer_id 58, and customer 58 is one row in customers. The shared value is called a <b>key</b>. One customer can have many transfers, but each transfer belongs to one customer. That's a <b>one-to-many</b> relationship.</p>
+
+  <h3>2. Your first JOIN</h3>
+  <div class="plain"><b>In plain English:</b> "For each transfer, find the customer whose id matches its customer_id, and put that customer's details on the same row."</div>
+<pre data-try>SELECT t.id, t.amount, c.name, c.country
+FROM transfers t
+JOIN customers c ON c.id = t.customer_id;</pre>
+  <ul>
+    <li><code>transfers t</code> gives the table a short nickname, called an <b>alias</b>. <code>t.amount</code> means "amount from transfers".</li>
+    <li><code>JOIN customers c ON c.id = t.customer_id</code> says which table to bring in and how rows match.</li>
+    <li>Both tables have a column called <code>id</code>, so you must say which: <code>t.id</code> or <code>c.id</code>. Plain <code>id</code> gives an "ambiguous column" error.</li>
+  </ul>
+  <p>Once you join, put the alias on every column. It's clearer and avoids surprises.</p>
+
+  <h3>3. After a join, everything works as before</h3>
+  <p>The joined result behaves like one wide table, so WHERE, GROUP BY and the rest work on columns from either side. "Average SGD transfer by customer country":</p>
+<pre data-try>SELECT c.country, COUNT(*) AS transfers, ROUND(AVG(t.amount), 2) AS avg_amount
+FROM transfers t
+JOIN customers c ON c.id = t.customer_id
+WHERE t.source_currency = 'SGD'
+GROUP BY c.country;</pre>
+  <p>The order of work is now: FROM and JOIN build the combined rows, then WHERE, GROUP BY and the rest.</p>
+
+  <h3>4. JOIN vs LEFT JOIN</h3>
+  <p>We have 8 customers who signed up recently and haven't sent anything yet (ids 121 to 128). Watch what happens to them:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">JOIN (also called INNER JOIN)</div>
+<pre data-try>SELECT c.id, c.name, t.id AS transfer_id
+FROM customers c
+JOIN transfers t ON t.customer_id = c.id
+WHERE c.id &gt;= 119
+ORDER BY c.id;</pre>
+    <p class="vs-why">Only customers 119 and 120 appear. Customers with no matching transfer are dropped, because JOIN keeps only rows that match on both sides.</p></div>
+    <div class="side b"><div class="vs-h">LEFT JOIN</div>
+<pre data-try>SELECT c.id, c.name, t.id AS transfer_id
+FROM customers c
+LEFT JOIN transfers t ON t.customer_id = c.id
+WHERE c.id &gt;= 119
+ORDER BY c.id;</pre>
+    <p class="vs-why">Customers 121 to 128 are kept, with NULL in transfer_id. LEFT JOIN keeps every row from the first (left) table, matched or not.</p></div>
+  </div>
+  <p><b>When to use which:</b> JOIN when you only want rows that have a match (most of the time). LEFT JOIN when the question says "every customer", "including those with none", or "who hasn't…".</p>
+
+  <h3>5. Finding what's missing</h3>
+  <p>That NULL is useful. "Which customers have never sent anything?" is a LEFT JOIN, then keep only the rows where the transfer side is empty:</p>
+<pre data-try>SELECT c.id, c.name, c.signup_date
+FROM customers c
+LEFT JOIN transfers t ON t.customer_id = c.id
+WHERE t.id IS NULL;</pre>
+
+  <h3>6. Counting after a LEFT JOIN</h3>
+  <p>"How many transfers does each customer have, including zero?" Here the choice of COUNT matters:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">COUNT(*)</div>
+<pre data-try>SELECT c.id, c.name, COUNT(*) AS transfers
+FROM customers c
+LEFT JOIN transfers t ON t.customer_id = c.id
+WHERE c.id &gt;= 119
+GROUP BY c.id, c.name;</pre>
+    <p class="vs-why">New customers show 1, not 0. Their single row full of NULLs is still a row, and COUNT(*) counts rows.</p></div>
+    <div class="side b"><div class="vs-h">COUNT(t.id)</div>
+<pre data-try>SELECT c.id, c.name, COUNT(t.id) AS transfers
+FROM customers c
+LEFT JOIN transfers t ON t.customer_id = c.id
+WHERE c.id &gt;= 119
+GROUP BY c.id, c.name;</pre>
+    <p class="vs-why">New customers correctly show 0. COUNT(column) skips NULLs.</p></div>
+  </div>
+
+  <h3>7. ON vs WHERE with a LEFT JOIN</h3>
+  <p>"Every customer and how many <i>failed</i> transfers they have." Where you put the status condition changes the answer:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">Condition in WHERE</div>
+<pre data-try>SELECT c.id, COUNT(t.id) AS failed
+FROM customers c
+LEFT JOIN transfers t ON t.customer_id = c.id
+WHERE t.status = 'FAILED'
+GROUP BY c.id;</pre>
+    <p class="vs-why">Fewer than 128 rows. Customers with no failures had status NULL or something else, so WHERE removed them. The LEFT JOIN has quietly become a normal JOIN.</p></div>
+    <div class="side b"><div class="vs-h">Condition in ON</div>
+<pre data-try>SELECT c.id, COUNT(t.id) AS failed
+FROM customers c
+LEFT JOIN transfers t ON t.customer_id = c.id AND t.status = 'FAILED'
+GROUP BY c.id;</pre>
+    <p class="vs-why">All 128 customers. ON only decides which transfers get attached; customers with none are still kept, with 0.</p></div>
+  </div>
+  <p>This is a classic interview trap. Rule: a condition on the <i>right-hand</i> table of a LEFT JOIN goes in ON if you want to keep the unmatched rows.</p>
+
+  <h3>8. Common errors</h3>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Problem</th><th>Usually means</th></tr>
+    <tr><td><code>ambiguous column name: id</code></td><td>Both tables have it. Write <code>t.id</code> or <code>c.id</code>.</td></tr>
+    <tr><td>Far more rows than expected</td><td>The ON condition is wrong, so rows matched many times.</td></tr>
+    <tr><td>Some customers are missing</td><td>JOIN drops non-matches. Use LEFT JOIN.</td></tr>
+    <tr><td>LEFT JOIN behaves like JOIN</td><td>A WHERE condition on the right table. Move it into ON.</td></tr>
+    <tr><td>Customers with nothing show 1</td><td>Use <code>COUNT(t.id)</code>, not <code>COUNT(*)</code>.</td></tr>
+  </table></div>
+
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li><code>JOIN table alias ON key = key</code> puts matching rows side by side.</li>
+    <li>Give tables aliases and use them on every column.</li>
+    <li>JOIN keeps only matches; LEFT JOIN keeps every row from the left table.</li>
+    <li>"Who has none?" = LEFT JOIN + <code>WHERE right.id IS NULL</code>.</li>
+    <li>After a LEFT JOIN, count a right-hand column, and put right-hand conditions in ON.</li>
+  </ul></div>
+
+  <h3>Exercises</h3>
+  <p>For each one ask: which table has the columns I need, and do I need to keep rows with no match?</p>
+  <div class="exlist"></div>
+</template>
+<template id="tpl5">
+  <div class="eyebrow">Day 5 of 14 · about 70 minutes</div>
   <h2>Joining three or more tables</h2>
-  <p>Real questions often need data from several places. Today you'll chain joins together, and meet two new tables that make the money comparable across currencies.</p>
+  <p><b>What you'll learn today:</b> how to chain several joins, and how to convert every amount to SGD so totals across currencies finally make sense.</p>
 
   <h3>1. Two new tables</h3>
-  <p><b>fx_rates</b> says how many Singapore dollars one unit of each currency is worth. <b>countries</b> turns a country code into a full name and a region.</p>
-<pre data-try><span class="kw">SELECT</span> * <span class="kw">FROM</span> fx_rates;</pre>
-<pre data-try><span class="kw">SELECT</span> * <span class="kw">FROM</span> countries;</pre>
-  <p>Remember the money trap from Day 2: you can't add SGD to IDR. With fx_rates you finally can, by converting everything to SGD first: <code>amount × sgd_rate</code>.</p>
-  <p class="note">The rates here are fixed, made-up numbers. A real system would store a rate per day and join on the date too. Mentioning that in an interview is a good sign that you think about real data.</p>
+  <p><code>fx_rates</code> says how many Singapore dollars one unit of each currency is worth:</p>
+<pre data-try data-rows="10">SELECT * FROM fx_rates;</pre>
+  <p>So 1 USD = S$1.35, and 1 IDR is worth a tiny fraction of a dollar. <code>countries</code> turns a country code into a full name and region:</p>
+<pre data-try>SELECT * FROM countries;</pre>
+  <p class="note">These rates are fixed, made-up numbers. A real system stores a rate per day and joins on the date too. Mentioning that in an interview shows you think about real data.</p>
 
-  <h3>2. Joining on something other than an id</h3>
-  <p>Keys don't have to be called id. Here the link is the currency code:</p>
-<pre data-try><span class="kw">SELECT</span> t.id, t.source_currency, t.amount, f.sgd_rate,
-       ROUND(t.amount * f.sgd_rate, 2) <span class="kw">AS</span> amount_sgd
-<span class="kw">FROM</span>   transfers t
-<span class="kw">JOIN</span>   fx_rates f <span class="kw">ON</span> f.currency = t.source_currency
-<span class="kw">LIMIT</span>  10;</pre>
-  <p>Now totals across currencies make sense:</p>
-<pre data-try><span class="kw">SELECT</span> ROUND(SUM(t.amount * f.sgd_rate), 2) <span class="kw">AS</span> total_completed_sgd
-<span class="kw">FROM</span>   transfers t
-<span class="kw">JOIN</span>   fx_rates f <span class="kw">ON</span> f.currency = t.source_currency
-<span class="kw">WHERE</span>  t.status = 'COMPLETED';</pre>
-  <p>Round the final total, not each row. Rounding every row first and then adding can drift by a few cents.</p>
+  <h3>2. Converting to SGD</h3>
+  <div class="plain"><b>In plain English:</b> "For each transfer, look up the rate for its currency, and multiply."</div>
+<pre data-try>SELECT t.id, t.source_currency, t.amount, f.sgd_rate,
+       ROUND(t.amount * f.sgd_rate, 2) AS amount_sgd
+FROM transfers t
+JOIN fx_rates f ON f.currency = t.source_currency;</pre>
+  <p>The key here is the currency code, not an id. Keys can be any column the two tables share.</p>
+  <p>Now you can total across currencies, which Day 2 warned you not to do with raw amounts:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">Raw amounts (meaningless)</div>
+<pre data-try>SELECT ROUND(SUM(amount), 2) AS total
+FROM transfers
+WHERE status = 'COMPLETED';</pre>
+    <p class="vs-why">Adds SGD, IDR, PHP and the rest as if they were the same money. The huge number comes mostly from rupiah.</p></div>
+    <div class="side b"><div class="vs-h">Converted to SGD</div>
+<pre data-try>SELECT ROUND(SUM(t.amount * f.sgd_rate), 2) AS total_sgd
+FROM transfers t
+JOIN fx_rates f ON f.currency = t.source_currency
+WHERE t.status = 'COMPLETED';</pre>
+    <p class="vs-why">Every row is in SGD first, so the total is real.</p></div>
+  </div>
+  <p>Round the final total, not each row. Rounding first and adding later can drift by a few cents.</p>
 
   <h3>3. Chaining joins</h3>
-  <p>To get a transfer's country <i>name</i>, you go transfers → customers (for the code) → countries (for the name). Each JOIN adds one more table onto the rows you already have:</p>
-<pre data-try><span class="kw">SELECT</span> t.id, c.name <span class="kw">AS</span> customer, co.name <span class="kw">AS</span> country, co.region
-<span class="kw">FROM</span>   transfers t
-<span class="kw">JOIN</span>   customers c  <span class="kw">ON</span> c.id    = t.customer_id
-<span class="kw">JOIN</span>   countries co <span class="kw">ON</span> co.code = c.country
-<span class="kw">LIMIT</span>  10;</pre>
+  <p>To get a transfer's country <i>name</i>, you go transfers → customers (for the country code) → countries (for the name). Each JOIN adds one more table to the rows you already have:</p>
+<pre data-try>SELECT t.id, c.name AS customer, co.name AS country, co.region
+FROM transfers t
+JOIN customers c  ON c.id    = t.customer_id
+JOIN countries co ON co.code = c.country;</pre>
   <ul>
-    <li>Each JOIN needs its own ON.</li>
-    <li>A later join can use any table joined before it. The countries join uses <code>c.country</code>, from the customers join above it.</li>
-    <li>Both customers and countries have a <code>name</code> column, so give them aliases in SELECT (<code>AS customer</code>, <code>AS country</code>) or the result is confusing.</li>
+    <li>Each JOIN gets its own ON.</li>
+    <li>A later join can use any table joined before it. The countries join uses <code>c.country</code>, from customers.</li>
+    <li>customers and countries both have a <code>name</code> column, so rename them with AS to keep the result clear.</li>
   </ul>
 
   <h3>4. Four tables at once</h3>
-  <p>"Completed volume in SGD by region" needs transfers (amount), fx_rates (conversion), customers (the link) and countries (region):</p>
-<pre data-try><span class="kw">SELECT</span>   co.region, ROUND(SUM(t.amount * f.sgd_rate), 2) <span class="kw">AS</span> volume_sgd
-<span class="kw">FROM</span>     transfers t
-<span class="kw">JOIN</span>     customers c  <span class="kw">ON</span> c.id       = t.customer_id
-<span class="kw">JOIN</span>     countries co <span class="kw">ON</span> co.code    = c.country
-<span class="kw">JOIN</span>     fx_rates f   <span class="kw">ON</span> f.currency = t.source_currency
-<span class="kw">WHERE</span>    t.status = 'COMPLETED'
-<span class="kw">GROUP BY</span> co.region;</pre>
-  <p>Writing tip: start with the table that has one row per thing you're measuring (here, transfers), then join outwards one table at a time. Run the query after each join to check it still makes sense.</p>
+  <p>"Completed volume in SGD by region" needs the amount (transfers), the rate (fx_rates), the link to the customer (customers) and the region (countries):</p>
+<pre data-try>SELECT co.region, ROUND(SUM(t.amount * f.sgd_rate), 2) AS volume_sgd
+FROM transfers t
+JOIN customers c  ON c.id       = t.customer_id
+JOIN countries co ON co.code    = c.country
+JOIN fx_rates f   ON f.currency = t.source_currency
+WHERE t.status = 'COMPLETED'
+GROUP BY co.region;</pre>
+  <p><b>How to build one of these:</b> start from the table with one row per thing you're measuring (transfers), then add one join at a time, running the query after each to check it still looks right.</p>
 
-  <h3>5. Checking your joins didn't multiply rows</h3>
-  <p>The most dangerous join bug gives no error. If a join matches more than one row, your rows get duplicated and every SUM and COUNT is inflated. A quick check: count rows before and after the joins.</p>
-<pre data-try><span class="kw">SELECT</span> (<span class="kw">SELECT</span> COUNT(*) <span class="kw">FROM</span> transfers) <span class="kw">AS</span> before_joins,
-       (<span class="kw">SELECT</span> COUNT(*) <span class="kw">FROM</span> transfers t
-          <span class="kw">JOIN</span> customers c <span class="kw">ON</span> c.id = t.customer_id
-          <span class="kw">JOIN</span> fx_rates f  <span class="kw">ON</span> f.currency = t.source_currency) <span class="kw">AS</span> after_joins;</pre>
-  <p>Both are 1,500, so each transfer matched exactly one customer and one rate. If after_joins were bigger, you'd look for a join on the wrong column, or a table with duplicate keys. Saying "let me sanity-check the row count" in an interview is a strong habit.</p>
+  <h3>5. Watch out: joins can multiply rows</h3>
+  <p>A join gives you one row per <i>match</i>. When one side has many matches, the other side's rows get repeated. Watch what happens if you count customers after joining transfers:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">COUNT(*) after the join</div>
+<pre data-try>SELECT COUNT(*) AS customers
+FROM customers c
+JOIN transfers t ON t.customer_id = c.id;</pre>
+    <p class="vs-why">1,500, not 120. Each customer appears once per transfer, so you've counted transfers.</p></div>
+    <div class="side b"><div class="vs-h">COUNT(DISTINCT c.id)</div>
+<pre data-try>SELECT COUNT(DISTINCT c.id) AS customers
+FROM customers c
+JOIN transfers t ON t.customer_id = c.id;</pre>
+    <p class="vs-why">120 different customers who have transfers.</p></div>
+  </div>
+  <p>The same thing silently inflates SUMs. A quick safety check: count rows before and after your joins. If you joined lookup tables (like customers or fx_rates) onto transfers, the count should stay at 1,500:</p>
+<pre data-try>SELECT (SELECT COUNT(*) FROM transfers) AS before_joins,
+       (SELECT COUNT(*) FROM transfers t
+          JOIN customers c ON c.id = t.customer_id
+          JOIN fx_rates f  ON f.currency = t.source_currency) AS after_joins;</pre>
+  <p>Saying "let me sanity-check the row count" in an interview is a strong habit.</p>
 
   <h3>6. Common errors</h3>
   <div class="tablewrap"><table class="ref">
     <tr><th>Problem</th><th>Usually means</th></tr>
     <tr><td>Totals are suspiciously large</td><td>A join multiplied rows. Check counts before and after.</td></tr>
-    <tr><td><code>no such column: c.country</code></td><td>You used an alias before the table that defines it was joined, or mistyped the alias.</td></tr>
-    <tr><td>Two columns called name in the result</td><td>Give them different aliases with AS.</td></tr>
-    <tr><td>Fewer rows than expected</td><td>An inner join couldn't find a match for some rows (for example a currency missing from fx_rates).</td></tr>
+    <tr><td><code>no such column: c.country</code></td><td>Wrong alias, or that table isn't joined yet.</td></tr>
+    <tr><td>Two columns called name</td><td>Rename them with AS.</td></tr>
+    <tr><td>Fewer rows than expected</td><td>JOIN found no match for some rows (for example a currency missing from fx_rates).</td></tr>
   </table></div>
+
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li>Chain joins one at a time; each needs its own ON.</li>
+    <li>Convert money with <code>amount * sgd_rate</code> before adding across currencies.</li>
+    <li>Round the final total, not each row.</li>
+    <li>Joins repeat rows when there are many matches. Count before and after.</li>
+  </ul></div>
 
   <h3>Exercises</h3>
   <div class="exlist"></div>
 </template>
-<template id="tpl6">  <div class="eyebrow">Day 6 of 14 · about 70 minutes</div>
+<template id="tpl6">
+  <div class="eyebrow">Day 6 of 14 · about 70 minutes</div>
   <h2>Working with dates and times</h2>
-  <p>Payments operations runs on time: how long transfers take, when traffic peaks, what happened last week. Today you'll pull parts out of dates, do date arithmetic, and measure the time between two events. This is also where SQLite and PostgreSQL differ most, so each section shows both.</p>
+  <p><b>What you'll learn today:</b> how to pull out parts of a date (hour, weekday, month), do date arithmetic ("the last 30 days"), and measure the time between two events ("how long did it take?"). This is where SQLite and PostgreSQL differ most, so every section shows both.</p>
 
   <h3>1. Pulling out part of a date</h3>
-  <p>In SQLite, <code>strftime(format, date)</code> pulls out the part you name:</p>
+  <p>In SQLite, <code>strftime(format, date)</code> pulls out the part you ask for:</p>
+<pre data-try data-rows="3">SELECT created_at,
+       strftime('%Y-%m', created_at) AS month,
+       strftime('%H', created_at)    AS hour,
+       strftime('%w', created_at)    AS weekday
+FROM transfers;</pre>
+  <p>Look at the result: each part has been cut out of the same timestamp. Weekday is a number, 0 for Sunday to 6 for Saturday.</p>
   <div class="tablewrap"><table class="ref">
     <tr><th>You want</th><th>SQLite (this page)</th><th>PostgreSQL</th></tr>
-    <tr><td>Year and month</td><td><code>strftime('%Y-%m', created_at)</code></td><td><code>DATE_TRUNC('month', created_at)</code> or <code>TO_CHAR(created_at, 'YYYY-MM')</code></td></tr>
+    <tr><td>Year and month</td><td><code>strftime('%Y-%m', created_at)</code></td><td><code>DATE_TRUNC('month', created_at)</code></td></tr>
     <tr><td>Just the date</td><td><code>date(created_at)</code></td><td><code>created_at::date</code></td></tr>
-    <tr><td>Hour, 00 to 23</td><td><code>strftime('%H', created_at)</code></td><td><code>EXTRACT(HOUR FROM created_at)</code></td></tr>
-    <tr><td>Day of week</td><td><code>strftime('%w', created_at)</code> (0 = Sunday)</td><td><code>EXTRACT(DOW FROM created_at)</code> (0 = Sunday)</td></tr>
+    <tr><td>Hour 00 to 23</td><td><code>strftime('%H', created_at)</code></td><td><code>EXTRACT(HOUR FROM created_at)</code></td></tr>
+    <tr><td>Day of week</td><td><code>strftime('%w', created_at)</code></td><td><code>EXTRACT(DOW FROM created_at)</code></td></tr>
   </table></div>
-<pre data-try><span class="kw">SELECT</span>   strftime('%H', created_at) <span class="kw">AS</span> hour, COUNT(*) <span class="kw">AS</span> transfers
-<span class="kw">FROM</span>     transfers
-<span class="kw">GROUP BY</span> hour
-<span class="kw">ORDER BY</span> hour;</pre>
-  <p>That's "when in the day do people send money?". Useful for staffing support or scheduling maintenance.</p>
-  <p class="note">strftime gives back <i>text</i>, so '09' sorts before '10' correctly only because it's zero-padded. That's fine here, but don't do maths on it without converting.</p>
+  <p>Group by a part to see patterns. "When in the day do people send money?":</p>
+<pre data-try data-rows="24">SELECT strftime('%H', created_at) AS hour, COUNT(*) AS transfers
+FROM transfers
+GROUP BY hour
+ORDER BY hour;</pre>
 
-  <h3>2. Date arithmetic: adding and subtracting time</h3>
-<pre data-try><span class="kw">SELECT</span> date('2026-11-01', '-30 days') <span class="kw">AS</span> thirty_days_before,
-       date('2026-11-01', '-1 month') <span class="kw">AS</span> one_month_before,
-       date('2026-11-01', '+7 days')  <span class="kw">AS</span> a_week_later;</pre>
-  <p>In PostgreSQL the same idea uses intervals: <code>DATE '2026-11-01' - INTERVAL '30 days'</code>. "The last 30 days" is then:</p>
-<pre data-try><span class="kw">SELECT</span> COUNT(*)
-<span class="kw">FROM</span>   transfers
-<span class="kw">WHERE</span>  created_at &gt;= date('2026-11-01', '-30 days')
-  <span class="kw">AND</span>  created_at &lt; '2026-11-01';</pre>
-  <p class="note">In a real system you'd use today's date: <code>date('now', '-30 days')</code> in SQLite, or <code>CURRENT_DATE - INTERVAL '30 days'</code> in PostgreSQL. This page uses a fixed date so the answers never change.</p>
+  <h3>2. Date arithmetic</h3>
+  <p><code>date(start, change)</code> moves a date forwards or backwards:</p>
+<pre data-try>SELECT date('2026-11-01', '-30 days') AS thirty_days_before,
+       date('2026-11-01', '-1 month') AS a_month_before,
+       date('2026-11-01', '+7 days')  AS a_week_later;</pre>
+  <p>In PostgreSQL you'd write <code>DATE '2026-11-01' - INTERVAL '30 days'</code>. Put together with Day 1's date-range habit, "the 30 days before 1 November":</p>
+<pre data-try>SELECT COUNT(*) AS transfers
+FROM transfers
+WHERE created_at &gt;= date('2026-11-01', '-30 days')
+  AND created_at &lt; '2026-11-01';</pre>
+  <p class="note">In real work you'd use today's date: <code>date('now', '-30 days')</code> in SQLite, or <code>CURRENT_DATE - INTERVAL '30 days'</code> in PostgreSQL. This page uses fixed dates so the answers never change.</p>
 
   <h3>3. Time between two events</h3>
-  <p>"How long does a transfer take?" means completed_at minus created_at. SQLite's <code>julianday()</code> turns a date into a number of days, so you can subtract:</p>
-<pre data-try><span class="kw">SELECT</span> id, created_at, completed_at,
-       ROUND((julianday(completed_at) - julianday(created_at)) * 24, 1) <span class="kw">AS</span> hours
-<span class="kw">FROM</span>   transfers
-<span class="kw">WHERE</span>  status = 'COMPLETED'
-<span class="kw">LIMIT</span>  10;</pre>
-  <ul>
-    <li>Subtracting two julianday values gives <b>days</b> (with decimals).</li>
-    <li>× 24 gives hours, × 1440 gives minutes.</li>
-    <li>In PostgreSQL: <code>EXTRACT(EPOCH FROM completed_at - created_at) / 3600</code> gives hours. EPOCH means "in seconds".</li>
-    <li>Only completed transfers have a completed_at. For the others the difference is NULL, which AVG simply skips.</li>
-  </ul>
+  <div class="plain"><b>In plain English:</b> "How long from when the transfer was created to when it completed?"</div>
+  <p>You can't subtract text, so SQLite's <code>julianday()</code> turns a date into a number of days. Subtract two of those and you get the gap in days; × 24 turns it into hours:</p>
+<pre data-try>SELECT id, created_at, completed_at,
+       julianday(completed_at) - julianday(created_at)        AS days,
+       ROUND((julianday(completed_at) - julianday(created_at)) * 24, 1) AS hours
+FROM transfers
+WHERE status = 'COMPLETED';</pre>
+  <p>Compare the days and hours columns: hours is always 24 times days. In PostgreSQL: <code>EXTRACT(EPOCH FROM completed_at - created_at) / 3600</code> gives hours (EPOCH means "in seconds").</p>
+  <p>Only completed transfers have a completed_at. For the rest the gap is NULL, which AVG and friends simply skip.</p>
 
-  <h3>4. Averages and thresholds on durations</h3>
-<pre data-try><span class="kw">SELECT</span>   target_currency,
-         ROUND(AVG((julianday(completed_at) - julianday(created_at)) * 24), 1) <span class="kw">AS</span> avg_hours,
-         SUM(<span class="kw">CASE WHEN</span> (julianday(completed_at) - julianday(created_at)) * 24 &gt; 24 <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) <span class="kw">AS</span> over_a_day
-<span class="kw">FROM</span>     transfers
-<span class="kw">WHERE</span>    status = 'COMPLETED' <span class="kw">AND</span> source_currency = 'SGD'
-<span class="kw">GROUP BY</span> target_currency
-<span class="kw">ORDER BY</span> avg_hours <span class="kw">DESC</span>;</pre>
-  <p>Averages hide outliers. One transfer stuck for 40 hours drags the average up. In an interview, mentioning the median, or a count of slow transfers like the over_a_day column, shows good judgement.</p>
+  <h3>4. Averages hide the slow ones</h3>
+  <p>"Average hours to complete, per corridor" is easy. But one transfer stuck for two days drags an average up, while a hundred fast ones hide it. So it's worth counting the slow ones too:</p>
+<pre data-try>SELECT target_currency,
+       ROUND(AVG((julianday(completed_at) - julianday(created_at)) * 24), 1) AS avg_hours,
+       SUM(CASE WHEN (julianday(completed_at) - julianday(created_at)) * 24 &gt; 24 THEN 1 ELSE 0 END) AS over_a_day
+FROM transfers
+WHERE status = 'COMPLETED' AND source_currency = 'SGD'
+GROUP BY target_currency
+ORDER BY avg_hours DESC;</pre>
+  <p>Notice the Day 3 conditional count being reused for "how many took more than a day". Mentioning the median, or a count of slow cases like this, is a good interview habit.</p>
 
-  <h3>5. Repeating long expressions</h3>
-  <p>The hours calculation is long, and WHERE can't use its alias. For now, repeat it. From Day 8 you'll calculate it once in a CTE and reuse it by name.</p>
+  <h3>5. A note on long formulas</h3>
+  <p>The hours formula is long, and WHERE can't use its alias, so you have to repeat it. From Day 8, you'll work it out once in a named step and reuse it.</p>
 
   <h3>6. Common errors</h3>
   <div class="tablewrap"><table class="ref">
     <tr><th>Problem</th><th>Usually means</th></tr>
-    <tr><td>Durations are all NULL</td><td>You included non-completed transfers, or misspelled a column. Filter to COMPLETED.</td></tr>
-    <tr><td>Durations look 24 times too small</td><td>You forgot × 24. julianday differences are in days.</td></tr>
-    <tr><td>Hours sort as 1, 10, 11, 2…</td><td>Something removed the zero padding. Sort by the strftime text, or convert with CAST.</td></tr>
-    <tr><td>A date range misses the last day</td><td>Use <code>&lt;</code> the start of the next period, as on Day 1.</td></tr>
+    <tr><td>Durations are all NULL</td><td>Non-completed transfers are included. Filter to COMPLETED.</td></tr>
+    <tr><td>Durations look 24 times too small</td><td>You forgot × 24; julianday gaps are in days.</td></tr>
+    <tr><td>A date range misses the last day</td><td>Use <code>&lt;</code> the start of the next period.</td></tr>
   </table></div>
+
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li><code>strftime</code> pulls out month, hour or weekday; group by it to find patterns.</li>
+    <li><code>date(x, '-30 days')</code> moves dates; PostgreSQL uses INTERVAL.</li>
+    <li>Time between events: <code>(julianday(end) - julianday(start)) * 24</code> hours.</li>
+    <li>Averages hide outliers. Count the slow cases too.</li>
+  </ul></div>
 
   <h3>Exercises</h3>
   <div class="exlist"></div>
 </template>
-<template id="tpl7">  <div class="eyebrow">Day 7 of 14 · about 60 minutes</div>
-  <h2>Review: putting the first week together</h2>
-  <p>No new syntax today. These exercises mix everything from Days 1 to 6, the way real questions do. The skill you're building is <b>choosing the right tool</b> without being told which day's topic it is.</p>
+<template id="tpl7">
+  <div class="eyebrow">Day 7 of 14 · about 60 minutes</div>
+  <h2>Review: choosing the right tool</h2>
+  <p><b>What you'll practise today:</b> nothing new. The exercises mix everything from Days 1 to 6, the way real questions do. The skill you're building is working out <i>which</i> tools a question needs without being told.</p>
 
-  <h3>1. A method for any question</h3>
-  <p>Before writing anything, answer these four questions in your head (or out loud in an interview):</p>
+  <h3>1. Four questions to ask before writing anything</h3>
   <ol>
-    <li><b>What does one row of the answer represent?</b> One per transfer? Per customer? Per currency per month? That decides GROUP BY.</li>
-    <li><b>Which tables have the columns I need?</b> That decides the JOINs.</li>
-    <li><b>Which rows count?</b> Filters on single rows go in WHERE; filters on groups go in HAVING.</li>
-    <li><b>What do I show, and in what order?</b> That's SELECT and ORDER BY, including a tie-break.</li>
+    <li><b>What does one row of the answer stand for?</b> One per transfer? Per customer? Per currency per month? That's your GROUP BY (or none).</li>
+    <li><b>Which tables have the columns I need?</b> That's your JOINs.</li>
+    <li><b>Which rows count?</b> Conditions on single rows go in WHERE. Conditions on groups go in HAVING.</li>
+    <li><b>What do I show, and in what order?</b> That's SELECT and ORDER BY, with a tie-break.</li>
   </ol>
+  <p>Say them out loud in an interview. It shows a clear method, and it stops you writing the wrong query fast.</p>
 
-  <h3>2. Pattern cheat sheet</h3>
+  <h3>2. Phrase → tool cheat sheet</h3>
   <div class="tablewrap"><table class="ref">
     <tr><th>The question says…</th><th>Reach for…</th></tr>
     <tr><td>"how many", "total", "average", "per X"</td><td><code>COUNT</code> / <code>SUM</code> / <code>AVG</code> with <code>GROUP BY X</code></td></tr>
@@ -873,8 +1058,8 @@ countries         -- Day 5+
     <tr><td>"only groups with…"</td><td><code>HAVING</code></td></tr>
     <tr><td>"customer name", "country", "region"</td><td><code>JOIN customers</code> / <code>countries</code></td></tr>
     <tr><td>"including those with none", "never"</td><td><code>LEFT JOIN</code>, maybe <code>… IS NULL</code></td></tr>
-    <tr><td>"in SGD", "total value across currencies"</td><td><code>JOIN fx_rates</code>, <code>amount * sgd_rate</code></td></tr>
-    <tr><td>"how long", "took more than"</td><td><code>julianday()</code> difference</td></tr>
+    <tr><td>"in SGD", "across currencies"</td><td><code>JOIN fx_rates</code>, <code>amount * sgd_rate</code></td></tr>
+    <tr><td>"how long", "took more than"</td><td><code>julianday()</code> gap</td></tr>
     <tr><td>"by month", "by hour"</td><td><code>strftime</code> / <code>substr</code></td></tr>
     <tr><td>"top N", "the highest"</td><td><code>ORDER BY … DESC LIMIT N</code></td></tr>
   </table></div>
@@ -883,418 +1068,530 @@ countries         -- Day 5+
   <p><i>"Which SGD corridors had more than 5 failed transfers in 2026, and what were their failure rates?"</i></p>
   <ol>
     <li>One row per target currency → <code>GROUP BY target_currency</code>.</li>
-    <li>Everything's on transfers → no join.</li>
-    <li>Row filters: SGD, 2026 → WHERE. Group filter: more than 5 failures → HAVING.</li>
-    <li>Show the currency, failures and rate, worst first.</li>
+    <li>Everything's in transfers → no join.</li>
+    <li>Row conditions: SGD, 2026 → WHERE. Group condition: more than 5 failures → HAVING.</li>
+    <li>Show currency, failures, rate. Worst first, ties by currency.</li>
   </ol>
-<pre data-try><span class="kw">SELECT</span>   target_currency,
-         SUM(<span class="kw">CASE WHEN</span> status = 'FAILED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) <span class="kw">AS</span> failed,
-         ROUND(SUM(<span class="kw">CASE WHEN</span> status = 'FAILED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) * 100.0 / COUNT(*), 1) <span class="kw">AS</span> failure_rate
-<span class="kw">FROM</span>     transfers
-<span class="kw">WHERE</span>    source_currency = 'SGD' <span class="kw">AND</span> created_at &gt;= '2026-01-01'
-<span class="kw">GROUP BY</span> target_currency
-<span class="kw">HAVING</span>   SUM(<span class="kw">CASE WHEN</span> status = 'FAILED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) &gt; 5
-<span class="kw">ORDER BY</span> failure_rate <span class="kw">DESC</span>, target_currency;</pre>
+<pre data-try>SELECT target_currency,
+       SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) AS failed,
+       ROUND(SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) AS failure_rate
+FROM transfers
+WHERE source_currency = 'SGD' AND created_at &gt;= '2026-01-01'
+GROUP BY target_currency
+HAVING SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) &gt; 5
+ORDER BY failure_rate DESC, target_currency;</pre>
 
   <h3>4. Build it in small steps</h3>
-  <p>For anything with more than two parts, don't write it all at once. Start with <code>SELECT * FROM … LIMIT 10</code>, add the join and check it, add WHERE and check the row count, then add the grouping. Each step either looks right or shows you exactly where it went wrong.</p>
+  <p>For anything with more than two parts, don't write it all at once:</p>
+  <ol>
+    <li>Start with <code>SELECT * FROM transfers LIMIT 10</code> to see the data.</li>
+    <li>Add the join and check the rows still look right.</li>
+    <li>Add WHERE and check the row count makes sense.</li>
+    <li>Add GROUP BY and the calculations.</li>
+    <li>Add HAVING, ORDER BY, LIMIT.</li>
+  </ol>
+  <p>Each step either looks right or shows you exactly where it went wrong.</p>
 
   <h3>5. Check your Weak spots</h3>
-  <p>After these exercises, open <b>Weak spots</b> in the top bar. A week of tracking is enough for it to know which skills need work, so a few rounds of practice there is the best use of the rest of today.</p>
+  <p>After these exercises, open <b>Weak spots</b> in the top bar. After a week of tracking it knows which skills need work, so a few rounds there is the best use of the rest of today.</p>
+
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li>Decide "one row per what?" first; it fixes GROUP BY.</li>
+    <li>Match the question's wording to a tool using the cheat sheet.</li>
+    <li>Build big queries in small, tested steps.</li>
+  </ul></div>
 
   <h3>Exercises</h3>
   <div class="exlist"></div>
 </template>
-<template id="tpl8">  <div class="eyebrow">Day 8 of 14 · about 75 minutes</div>
+<template id="tpl8">
+  <div class="eyebrow">Day 8 of 14 · about 75 minutes</div>
   <h2>CTEs and subqueries: building in steps</h2>
-  <p>Some questions can't be answered in one pass. "Which months were above average?" needs the monthly numbers first, then the average of those numbers, then a comparison. Today you'll learn to build a query in named steps. Wise's job ad names CTEs specifically, so this matters.</p>
+  <p><b>What you'll learn today:</b> how to break a question into steps, where one step's result feeds the next. Some questions can't be answered in one pass. "Which months were above average?" needs the monthly numbers first, then their average, then a comparison. Wise's job ad names CTEs specifically.</p>
 
   <h3>1. A subquery: a query inside a query</h3>
-  <p>The simplest step is a subquery in brackets. Here it works out one number, the average SGD amount, which the outer query then compares against:</p>
-<pre data-try><span class="kw">SELECT</span> id, amount
-<span class="kw">FROM</span>   transfers
-<span class="kw">WHERE</span>  source_currency = 'SGD'
-  <span class="kw">AND</span>  amount &gt; (<span class="kw">SELECT</span> AVG(amount) <span class="kw">FROM</span> transfers <span class="kw">WHERE</span> source_currency = 'SGD')
-<span class="kw">ORDER BY</span> amount <span class="kw">DESC</span>
-<span class="kw">LIMIT</span>  10;</pre>
-  <p>The inner query runs first and returns a single value. Then the outer query uses it like a constant. A subquery can also return a list for IN:</p>
-<pre data-try><span class="kw">SELECT</span> id, name
-<span class="kw">FROM</span>   customers
-<span class="kw">WHERE</span>  id <span class="kw">IN</span> (<span class="kw">SELECT</span> customer_id <span class="kw">FROM</span> transfers <span class="kw">WHERE</span> failure_reason = 'COMPLIANCE_HOLD');</pre>
+  <div class="plain"><b>In plain English:</b> "Work this out first, then use the answer in the main query."</div>
+  <p>"Which SGD transfers are bigger than the average SGD transfer?" You need the average before you can compare against it:</p>
+<pre data-try>SELECT AVG(amount) FROM transfers WHERE source_currency = 'SGD';</pre>
+  <p>Now put that query in brackets inside the main one. The inner query runs first and gives one number; the outer query uses it like a fixed value:</p>
+<pre data-try>SELECT id, amount
+FROM transfers
+WHERE source_currency = 'SGD'
+  AND amount &gt; (SELECT AVG(amount) FROM transfers WHERE source_currency = 'SGD')
+ORDER BY amount DESC;</pre>
+  <p>Every amount in the result is above the average you saw a moment ago. A subquery can also give a list, for use with IN:</p>
+<pre data-try>SELECT id, name
+FROM customers
+WHERE id IN (SELECT customer_id FROM transfers WHERE failure_reason = 'COMPLIANCE_HOLD');</pre>
 
   <h3>2. A CTE: a named step at the top</h3>
-  <p>Subqueries get hard to read when they're nested. A <b>CTE</b> (Common Table Expression) moves the step to the top and gives it a name, using <code>WITH</code>:</p>
-<pre data-try><span class="kw">WITH</span> per_customer <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> customer_id, COUNT(*) <span class="kw">AS</span> n
-  <span class="kw">FROM</span>   transfers
-  <span class="kw">GROUP BY</span> customer_id
+  <p>Subqueries get hard to read once they're nested inside each other. A <b>CTE</b> (Common Table Expression) moves the step to the top and gives it a name, using <code>WITH</code>.</p>
+  <p>"On average, how many transfers does a customer make?" That's an average <i>of counts</i>: first count per customer, then average those counts. One GROUP BY can't do both. Step 1 on its own:</p>
+<pre data-try>SELECT customer_id, COUNT(*) AS n
+FROM transfers
+GROUP BY customer_id;</pre>
+  <p>Wrap it in WITH, give it a name, and use that name like a table:</p>
+<pre data-try>WITH per_customer AS (
+  SELECT customer_id, COUNT(*) AS n
+  FROM transfers
+  GROUP BY customer_id
 )
-<span class="kw">SELECT</span> ROUND(AVG(n), 2) <span class="kw">AS</span> avg_transfers, MAX(n) <span class="kw">AS</span> most, MIN(n) <span class="kw">AS</span> fewest
-<span class="kw">FROM</span>   per_customer;</pre>
+SELECT ROUND(AVG(n), 2) AS avg_transfers, MAX(n) AS most, MIN(n) AS fewest
+FROM per_customer;</pre>
   <ul>
     <li><code>WITH name AS ( … )</code> runs the inner query and calls the result <code>per_customer</code>.</li>
-    <li>The main query below uses it like a table: <code>FROM per_customer</code>.</li>
+    <li>The main query reads it with <code>FROM per_customer</code>.</li>
     <li>It only exists while this one query runs. Nothing is saved.</li>
-    <li>No comma before the main SELECT, and the brackets are required.</li>
+    <li>Brackets are required. No comma between the CTE and the main SELECT.</li>
   </ul>
-  <p>Notice what this did: an average of counts, which a single GROUP BY can't give you. That's the typical reason to use a CTE: you need to aggregate twice.</p>
 
-  <h3>3. Using a CTE more than once</h3>
-  <p>A CTE can be read several times in the main query. "Months above the average month":</p>
-<pre data-try><span class="kw">WITH</span> monthly <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> substr(created_at, 1, 7) <span class="kw">AS</span> month, COUNT(*) <span class="kw">AS</span> n
-  <span class="kw">FROM</span>   transfers
-  <span class="kw">GROUP BY</span> month
+  <h3>3. Same question, two ways</h3>
+  <p>"Months with more transfers than the average month":</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">Nested subqueries</div>
+<pre data-try>SELECT month, n
+FROM (SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS n FROM transfers GROUP BY month)
+WHERE n &gt; (SELECT AVG(n) FROM (SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS n FROM transfers GROUP BY month))
+ORDER BY month;</pre>
+    <p class="vs-why">Works, but the monthly query is written twice and it reads inside-out.</p></div>
+    <div class="side b"><div class="vs-h">CTE</div>
+<pre data-try>WITH monthly AS (
+  SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS n
+  FROM transfers
+  GROUP BY month
 )
-<span class="kw">SELECT</span> month, n
-<span class="kw">FROM</span>   monthly
-<span class="kw">WHERE</span>  n &gt; (<span class="kw">SELECT</span> AVG(n) <span class="kw">FROM</span> monthly)
-<span class="kw">ORDER BY</span> month;</pre>
+SELECT month, n
+FROM monthly
+WHERE n &gt; (SELECT AVG(n) FROM monthly)
+ORDER BY month;</pre>
+    <p class="vs-why">Same result. The step is written once, named, and read top to bottom.</p></div>
+  </div>
 
   <h3>4. Joining a CTE to a table</h3>
   <p>A CTE can be joined like any table. Count failures per customer in a step, then bring in their names:</p>
-<pre data-try><span class="kw">WITH</span> fails <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> customer_id, COUNT(*) <span class="kw">AS</span> failures
-  <span class="kw">FROM</span>   transfers
-  <span class="kw">WHERE</span>  status = 'FAILED'
-  <span class="kw">GROUP BY</span> customer_id
+<pre data-try>WITH fails AS (
+  SELECT customer_id, COUNT(*) AS failures
+  FROM transfers
+  WHERE status = 'FAILED'
+  GROUP BY customer_id
 )
-<span class="kw">SELECT</span>   c.name, f.failures
-<span class="kw">FROM</span>     fails f
-<span class="kw">JOIN</span>     customers c <span class="kw">ON</span> c.id = f.customer_id
-<span class="kw">ORDER BY</span> f.failures <span class="kw">DESC</span>, c.name
-<span class="kw">LIMIT</span>    10;</pre>
+SELECT c.name, f.failures
+FROM fails f
+JOIN customers c ON c.id = f.customer_id
+ORDER BY f.failures DESC, c.name;</pre>
 
-  <h3>5. CTE or subquery?</h3>
+  <h3>5. Which should I use?</h3>
   <ul>
-    <li><b>A single value or a short list</b> used once: a subquery in WHERE is fine.</li>
-    <li><b>Anything with GROUP BY, or used twice, or longer than a line</b>: a CTE. It reads top to bottom like a recipe, and you can test each step on its own by running just its SELECT.</li>
+    <li><b>One number or a short list, used once</b> (like "above the average"): a subquery in WHERE is fine.</li>
+    <li><b>Anything with GROUP BY, used twice, or longer than a line</b>: a CTE.</li>
   </ul>
-  <p>In interviews, CTEs win. They show you can break a problem down, and they make it easy to talk through your logic step by step.</p>
+  <p>In interviews, lean on CTEs. You can test each step by running its SELECT on its own, and they make it easy to talk through your thinking.</p>
 
   <h3>6. Common errors</h3>
   <div class="tablewrap"><table class="ref">
     <tr><th>Problem</th><th>Usually means</th></tr>
-    <tr><td><code>near "SELECT": syntax error</code> after the CTE</td><td>A missing closing bracket, or an extra comma before the main SELECT.</td></tr>
-    <tr><td><code>no such column</code> inside the main query</td><td>The CTE didn't select that column, or named it differently. Its columns are only what its SELECT lists.</td></tr>
-    <tr><td><code>sub-select returns 2 columns</code></td><td>A subquery used with &gt; or = must return one column (and one row).</td></tr>
-    <tr><td><code>no such table: monthly</code></td><td>You tried to use the CTE in a separate query. It only exists within its own statement.</td></tr>
+    <tr><td>Syntax error right after the CTE</td><td>A missing closing bracket, or an extra comma before the main SELECT.</td></tr>
+    <tr><td><code>no such column</code> in the main query</td><td>The CTE doesn't have that column. It only has what its SELECT lists.</td></tr>
+    <tr><td><code>sub-select returns 2 columns</code></td><td>A subquery compared with &gt; or = must return one value.</td></tr>
+    <tr><td><code>no such table: monthly</code></td><td>The CTE only exists inside its own statement.</td></tr>
   </table></div>
 
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li>A subquery in brackets runs first and gives a value or list to the outer query.</li>
+    <li><code>WITH name AS (…)</code> creates a named step you can use like a table.</li>
+    <li>Use a CTE when you need to aggregate twice (an average of counts, a total of totals).</li>
+    <li>Test each step's SELECT on its own before wrapping it.</li>
+  </ul></div>
+
   <h3>Exercises</h3>
-  <p>Write each CTE's SELECT on its own first, run it, check it, then wrap it in WITH.</p>
+  <p>Write each step's SELECT on its own first, run it, check it, then wrap it in WITH.</p>
   <div class="exlist"></div>
 </template>
-<template id="tpl9">  <div class="eyebrow">Day 9 of 14 · about 75 minutes</div>
+<template id="tpl9">
+  <div class="eyebrow">Day 9 of 14 · about 75 minutes</div>
   <h2>Chaining CTEs: multi-step analysis</h2>
-  <p>Yesterday each query had one step. Today you'll chain several, each building on the last. This is how analysts answer the messy, real questions: count, then turn counts into rates, then compare rates. Separate CTEs with commas, under a single WITH.</p>
+  <p><b>What you'll learn today:</b> how to chain several steps, each building on the one before. Count, then turn counts into rates, then compare. This is how analysts answer the messy real questions.</p>
 
   <h3>1. The shape of a chain</h3>
-<pre><span class="kw">WITH</span> step1 <span class="kw">AS</span> ( … reads the real tables … ),
-     step2 <span class="kw">AS</span> ( … reads step1 … ),
-     step3 <span class="kw">AS</span> ( … can read step1 and step2 … )
-<span class="kw">SELECT</span> … <span class="kw">FROM</span> step3 …;</pre>
+<pre class="nohl">WITH step1 AS ( … reads the real tables … ),
+     step2 AS ( … reads step1 … ),
+     step3 AS ( … can read step1 and step2 … )
+SELECT … FROM step3 …;</pre>
   <ul>
     <li>One <code>WITH</code> at the top, then a comma between steps.</li>
-    <li>Each step can use any step above it.</li>
+    <li>Each step can read any step above it.</li>
     <li>Name steps after what they hold: <code>monthly</code>, <code>rates</code>, <code>per_customer</code>.</li>
   </ul>
 
-  <h3>2. Counts, then rates, then a filter</h3>
-<pre data-try><span class="kw">WITH</span> monthly <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> substr(created_at, 1, 7) <span class="kw">AS</span> month,
-         COUNT(*) <span class="kw">AS</span> total,
-         SUM(<span class="kw">CASE WHEN</span> status = 'FAILED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) <span class="kw">AS</span> failed
-  <span class="kw">FROM</span> transfers
-  <span class="kw">GROUP BY</span> month
+  <h3>2. Counts → rates → filter</h3>
+  <p>Remember Day 3, where you had to repeat the long rate formula inside HAVING? Chaining fixes that. Step 1 counts. Step 2 turns counts into a rate, with a name. The final query just filters on that name:</p>
+<pre data-try>WITH monthly AS (
+  SELECT substr(created_at, 1, 7) AS month,
+         COUNT(*) AS total,
+         SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) AS failed
+  FROM transfers
+  GROUP BY month
 ),
-rates <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> month, total, failed, ROUND(failed * 100.0 / total, 1) <span class="kw">AS</span> rate
-  <span class="kw">FROM</span> monthly
+rates AS (
+  SELECT month, total, failed, ROUND(failed * 100.0 / total, 1) AS rate
+  FROM monthly
 )
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> rates <span class="kw">ORDER BY</span> rate <span class="kw">DESC</span> <span class="kw">LIMIT</span> 3;</pre>
-  <p>Compare this with Day 3, where you had to repeat the rate formula in HAVING. Here <code>rate</code> is a real column of the <code>rates</code> step, so the final query can filter and sort on it by name.</p>
+SELECT * FROM rates WHERE rate &gt; 8 ORDER BY month;</pre>
+  <p>Try running just the <code>monthly</code> step's SELECT on its own in the console: that's step 1's result. The <code>rates</code> step adds a column to it, and the last line filters it.</p>
 
   <h3>3. Labelling in a middle step</h3>
-  <p>A step can add a CASE label that a later step groups by. "How many customers are low, mid or high value?":</p>
-<pre data-try><span class="kw">WITH</span> totals <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> customer_id, SUM(amount) <span class="kw">AS</span> total
-  <span class="kw">FROM</span> transfers
-  <span class="kw">WHERE</span> status = 'COMPLETED' <span class="kw">AND</span> source_currency = 'SGD'
-  <span class="kw">GROUP BY</span> customer_id
+  <p>"How many customers are low, mid or high value?" Step 1 totals each customer. Step 2 labels each total with CASE. The final query counts each label:</p>
+<pre data-try>WITH totals AS (
+  SELECT customer_id, SUM(amount) AS total
+  FROM transfers
+  WHERE status = 'COMPLETED' AND source_currency = 'SGD'
+  GROUP BY customer_id
 ),
-tiers <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> customer_id,
-         <span class="kw">CASE WHEN</span> total &lt; 5000 <span class="kw">THEN</span> 'low' <span class="kw">WHEN</span> total &lt; 20000 <span class="kw">THEN</span> 'mid' <span class="kw">ELSE</span> 'high' <span class="kw">END AS</span> tier
-  <span class="kw">FROM</span> totals
+tiers AS (
+  SELECT customer_id,
+         CASE WHEN total &lt; 5000 THEN 'low' WHEN total &lt; 20000 THEN 'mid' ELSE 'high' END AS tier
+  FROM totals
 )
-<span class="kw">SELECT</span> tier, COUNT(*) <span class="kw">AS</span> customers <span class="kw">FROM</span> tiers <span class="kw">GROUP BY</span> tier;</pre>
+SELECT tier, COUNT(*) AS customers FROM tiers GROUP BY tier;</pre>
 
-  <h3>4. Comparing against a total: share of the whole</h3>
-  <p>"What share of volume does each corridor have?" needs each corridor's number <i>and</i> the grand total on the same row. Put the total in its own one-row step and join it on:</p>
-<pre data-try><span class="kw">WITH</span> vol <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> target_currency, SUM(amount) <span class="kw">AS</span> volume
-  <span class="kw">FROM</span> transfers <span class="kw">WHERE</span> status = 'COMPLETED' <span class="kw">AND</span> source_currency = 'SGD'
-  <span class="kw">GROUP BY</span> target_currency
+  <h3>4. Share of the total</h3>
+  <p>"What % of volume does each corridor have?" needs each corridor's number <i>and</i> the grand total on the same row. Put the total in its own step, which has exactly one row, and attach it to every row:</p>
+<pre data-try>WITH vol AS (
+  SELECT target_currency, SUM(amount) AS volume
+  FROM transfers WHERE status = 'COMPLETED' AND source_currency = 'SGD'
+  GROUP BY target_currency
 ),
-total <span class="kw">AS</span> (<span class="kw">SELECT</span> SUM(volume) <span class="kw">AS</span> all_volume <span class="kw">FROM</span> vol)
-<span class="kw">SELECT</span>   v.target_currency, ROUND(v.volume * 100.0 / t.all_volume, 1) <span class="kw">AS</span> share_pct
-<span class="kw">FROM</span>     vol v, total t
-<span class="kw">ORDER BY</span> share_pct <span class="kw">DESC</span>;</pre>
-  <p><code>FROM vol v, total t</code> with no ON pairs every row of vol with the single row of total. That's safe <i>only</i> because total has exactly one row. (On Day 11 you'll see a window function that does this more neatly.)</p>
+total AS (SELECT SUM(volume) AS all_volume FROM vol)
+SELECT v.target_currency, ROUND(v.volume * 100.0 / t.all_volume, 1) AS share_pct
+FROM vol v, total t
+ORDER BY share_pct DESC;</pre>
+  <p><code>FROM vol v, total t</code> (with a comma and no ON) pairs every row of vol with every row of total. That's only safe because total has exactly one row. The shares add up to 100. Day 11 shows a shorter way to do this.</p>
 
-  <h3>5. Comparing two periods</h3>
-  <p>"Did things get better or worse from Q2 to Q3?" Label each row with its period in one step, then count each period side by side with conditional counts:</p>
-<pre data-try><span class="kw">WITH</span> labelled <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> target_currency,
-         <span class="kw">CASE WHEN</span> created_at &gt;= '2026-04-01' <span class="kw">AND</span> created_at &lt; '2026-07-01' <span class="kw">THEN</span> 'Q2'
-              <span class="kw">WHEN</span> created_at &gt;= '2026-07-01' <span class="kw">AND</span> created_at &lt; '2026-10-01' <span class="kw">THEN</span> 'Q3' <span class="kw">END AS</span> q
-  <span class="kw">FROM</span> transfers <span class="kw">WHERE</span> source_currency = 'SGD'
+  <h3>5. Comparing two periods side by side</h3>
+  <p>"Did failures go up or down from Q2 to Q3?" Step 1 labels each row with its quarter. The final query counts each quarter in its own column, using conditional counts:</p>
+<pre data-try>WITH labelled AS (
+  SELECT failure_reason,
+         CASE WHEN created_at &gt;= '2026-04-01' AND created_at &lt; '2026-07-01' THEN 'Q2'
+              WHEN created_at &gt;= '2026-07-01' AND created_at &lt; '2026-10-01' THEN 'Q3' END AS q
+  FROM transfers WHERE status = 'FAILED'
 )
-<span class="kw">SELECT</span> target_currency,
-       SUM(<span class="kw">CASE WHEN</span> q = 'Q2' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) <span class="kw">AS</span> q2,
-       SUM(<span class="kw">CASE WHEN</span> q = 'Q3' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) <span class="kw">AS</span> q3
-<span class="kw">FROM</span>   labelled
-<span class="kw">GROUP BY</span> target_currency;</pre>
-  <p>Turning rows (one per period) into columns (q2, q3) like this is called <b>pivoting</b>. Interviewers ask for it often.</p>
+SELECT failure_reason,
+       SUM(CASE WHEN q = 'Q2' THEN 1 ELSE 0 END) AS q2,
+       SUM(CASE WHEN q = 'Q3' THEN 1 ELSE 0 END) AS q3
+FROM labelled
+GROUP BY failure_reason;</pre>
+  <p>Turning rows (one per quarter) into columns (q2, q3) is called <b>pivoting</b>. It comes up a lot, because people like comparisons side by side.</p>
 
-  <h3>6. How to talk through a chain in an interview</h3>
-  <p>Say the steps before you write them: "First I'll get monthly counts, then turn them into rates, then filter to months above 8%." Then write one CTE at a time, run it, and check it before adding the next. If you run out of time, a correct first two steps still shows clear thinking.</p>
+  <h3>6. Talking through a chain in an interview</h3>
+  <p>Say the steps before writing them: "First I'll get monthly counts, then turn them into rates, then filter." Write one step, run it, check it, then add the next. If you run out of time, two correct steps still show clear thinking.</p>
+
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li>One WITH, steps separated by commas, each reading the ones above.</li>
+    <li>Calculate something once in a step, then filter or sort on its name later.</li>
+    <li>For "share of total", put the total in a one-row step and attach it.</li>
+    <li>Pivot periods into columns with conditional counts.</li>
+  </ul></div>
 
   <h3>Exercises</h3>
   <div class="exlist"></div>
 </template>
-<template id="tpl10">  <div class="eyebrow">Day 10 of 14 · about 80 minutes</div>
-  <h2>Window functions: ROW_NUMBER and ranking</h2>
-  <p>GROUP BY squashes rows together. Sometimes you want to keep every row and add a number <i>about</i> it: its position, its rank, or which number transfer it was for that customer. That's what <b>window functions</b> do. They unlock "first", "latest" and "top N per group" questions, which come up constantly.</p>
+<template id="tpl10">
+  <div class="eyebrow">Day 10 of 14 · about 75 minutes</div>
+  <h2>Window functions: ranking within groups</h2>
+  <p><b>What you'll learn today:</b> how to calculate something across a group of rows <i>without</i> squashing them into one row. This is how you answer "top 3 per currency", "each customer's first transfer" or "rank customers by volume".</p>
 
-  <h3>1. ROW_NUMBER: numbering rows</h3>
-<pre data-try><span class="kw">SELECT</span> id, created_at, amount,
-       ROW_NUMBER() <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> created_at) <span class="kw">AS</span> n
-<span class="kw">FROM</span>   transfers
-<span class="kw">WHERE</span>  customer_id = 58;</pre>
+  <h3>1. GROUP BY squashes, a window keeps every row</h3>
+  <div class="plain"><b>In plain English:</b> a window function looks at the other rows in the same group, works something out, and writes the answer next to <i>each</i> row. No rows disappear.</div>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">GROUP BY: one row per customer</div>
+<pre data-try data-rows="4">SELECT customer_id, COUNT(*) AS n
+FROM transfers
+WHERE customer_id &lt;= 2 AND created_at &gt;= '2026-08-01'
+GROUP BY customer_id;</pre>
+    <p class="vs-why">You get the count, but the individual transfers are gone.</p></div>
+    <div class="side b"><div class="vs-h">Window: every transfer, count alongside</div>
+<pre data-try data-rows="6">SELECT id, customer_id, amount,
+       COUNT(*) OVER (PARTITION BY customer_id) AS n
+FROM transfers
+WHERE customer_id &lt;= 2 AND created_at &gt;= '2026-08-01'
+ORDER BY customer_id, id;</pre>
+    <p class="vs-why">Every transfer is still there, and each one also shows its customer's total count.</p></div>
+  </div>
   <ul>
-    <li><code>OVER ( … )</code> is what makes it a window function. Inside the brackets you say how to line rows up.</li>
-    <li><code>ORDER BY created_at</code> inside OVER decides the numbering order. It's separate from the query's own ORDER BY at the end.</li>
-    <li>Every row is kept. Nothing is squashed.</li>
+    <li><code>OVER ( … )</code> is what makes it a window function.</li>
+    <li><code>PARTITION BY customer_id</code> means "the group is all rows with the same customer". It's like GROUP BY, but without squashing.</li>
+    <li>Leave PARTITION BY out and the whole result is one big group.</li>
   </ul>
 
-  <h3>2. PARTITION BY: start again for each group</h3>
-  <p><code>PARTITION BY</code> splits rows into groups (like GROUP BY) but keeps them all, and restarts the numbering in each group:</p>
-<pre data-try><span class="kw">SELECT</span> customer_id, id, created_at,
-       ROW_NUMBER() <span class="kw">OVER</span> (<span class="kw">PARTITION BY</span> customer_id <span class="kw">ORDER BY</span> created_at) <span class="kw">AS</span> nth_transfer
-<span class="kw">FROM</span>   transfers
-<span class="kw">WHERE</span>  customer_id <span class="kw">IN</span> (7, 58)
-<span class="kw">ORDER BY</span> customer_id, nth_transfer;</pre>
-  <p>Customer 7's transfers are numbered 1, 2, 3…, then customer 58's start again at 1.</p>
+  <h3>2. ROW_NUMBER: numbering rows in order</h3>
+  <p>Add <code>ORDER BY</code> inside OVER and you can number the rows in each group. "Number each customer's transfers, oldest first":</p>
+<pre data-try data-rows="8">SELECT customer_id, id, created_at,
+       ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY created_at) AS nth
+FROM transfers
+WHERE customer_id &lt;= 2 AND created_at &gt;= '2026-08-01'
+ORDER BY customer_id, nth;</pre>
+  <p>Look at the <code>nth</code> column: it counts 1, 2, 3… and starts again at 1 when the customer changes. That restart is what PARTITION BY does.</p>
 
-  <h3>3. "First" or "latest" per group</h3>
-  <p>You can't filter on a window function in WHERE, because WHERE runs before SELECT, where windows are calculated. So number the rows in a CTE, then filter in the next step:</p>
-<pre data-try><span class="kw">WITH</span> ranked <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> customer_id, id, created_at, status,
-         ROW_NUMBER() <span class="kw">OVER</span> (<span class="kw">PARTITION BY</span> customer_id <span class="kw">ORDER BY</span> created_at <span class="kw">DESC</span>) <span class="kw">AS</span> rn
-  <span class="kw">FROM</span> transfers
-)
-<span class="kw">SELECT</span> customer_id, id, created_at, status
-<span class="kw">FROM</span>   ranked
-<span class="kw">WHERE</span>  rn = 1
-<span class="kw">ORDER BY</span> customer_id
-<span class="kw">LIMIT</span>  10;</pre>
-  <p>That's each customer's latest transfer. Flip to <code>ORDER BY created_at</code> (no DESC) and it's their first. Change <code>rn = 1</code> to <code>rn &lt;= 3</code> and you get their three latest. This one pattern answers a huge range of questions.</p>
-
-  <h3>4. RANK and DENSE_RANK: handling ties</h3>
-  <p>ROW_NUMBER never gives two rows the same number, even when they're tied; it picks an order. For a fair ranking, use RANK or DENSE_RANK:</p>
-  <div class="tablewrap"><table class="ref">
-    <tr><th>Scores</th><th>ROW_NUMBER</th><th>RANK</th><th>DENSE_RANK</th></tr>
-    <tr><td>100</td><td>1</td><td>1</td><td>1</td></tr>
-    <tr><td>90</td><td>2</td><td>2</td><td>2</td></tr>
-    <tr><td>90</td><td>3</td><td>2</td><td>2</td></tr>
-    <tr><td>80</td><td>4</td><td>4</td><td>3</td></tr>
-  </table></div>
-  <p>Window functions run after GROUP BY, so you can rank by an aggregate:</p>
-<pre data-try><span class="kw">SELECT</span>   target_currency, COUNT(*) <span class="kw">AS</span> n,
-         RANK() <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> COUNT(*) <span class="kw">DESC</span>) <span class="kw">AS</span> rnk
-<span class="kw">FROM</span>     transfers
-<span class="kw">WHERE</span>    source_currency = 'SGD'
-<span class="kw">GROUP BY</span> target_currency
-<span class="kw">ORDER BY</span> rnk;</pre>
-
-  <h3>5. Making ROW_NUMBER predictable</h3>
-  <p>If two rows tie on the window's ORDER BY, ROW_NUMBER picks between them however it likes, and the answer can change between runs. Add a tie-breaker, usually the id: <code>ORDER BY created_at, id</code>. The exercises do this, and interviewers notice when you do.</p>
-
-  <h3>6. Top N per group</h3>
-  <p>"Top 2 customers per country" combines everything: a total per customer, then a numbered list per country, then a filter.</p>
-<pre data-try><span class="kw">WITH</span> totals <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> c.country, c.name, c.id, COUNT(*) <span class="kw">AS</span> n
-  <span class="kw">FROM</span> transfers t <span class="kw">JOIN</span> customers c <span class="kw">ON</span> c.id = t.customer_id
-  <span class="kw">GROUP BY</span> c.country, c.name, c.id
-),
-ranked <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> country, name, n,
-         ROW_NUMBER() <span class="kw">OVER</span> (<span class="kw">PARTITION BY</span> country <span class="kw">ORDER BY</span> n <span class="kw">DESC</span>, id) <span class="kw">AS</span> pos
-  <span class="kw">FROM</span> totals
-)
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> ranked <span class="kw">WHERE</span> pos &lt;= 2 <span class="kw">ORDER BY</span> country, pos;</pre>
-
-  <h3>7. Common errors</h3>
-  <div class="tablewrap"><table class="ref">
-    <tr><th>Problem</th><th>Usually means</th></tr>
-    <tr><td><code>misuse of window function</code></td><td>You used it in WHERE or HAVING. Calculate it in a CTE, filter in the next step.</td></tr>
-    <tr><td>Numbering doesn't restart per customer</td><td>Missing <code>PARTITION BY</code>.</td></tr>
-    <tr><td>Got the oldest instead of the latest</td><td>Missing <code>DESC</code> inside OVER.</td></tr>
-    <tr><td>Results change slightly between runs</td><td>Ties in the window's ORDER BY. Add the id as a tie-breaker.</td></tr>
-  </table></div>
-
-  <h3>Exercises</h3>
-  <div class="exlist"></div>
-</template>
-<template id="tpl11">  <div class="eyebrow">Day 11 of 14 · about 75 minutes</div>
-  <h2>LAG, LEAD and running totals</h2>
-  <p>Trends are what operations teams watch: did volume go up this month, is the failure rate getting worse, how long since a customer's last transfer? Today's window functions compare each row with the one before it, and add things up as they go.</p>
-
-  <h3>1. LAG: the previous row's value</h3>
-<pre data-try><span class="kw">WITH</span> m <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> substr(created_at, 1, 7) <span class="kw">AS</span> month, COUNT(*) <span class="kw">AS</span> n
-  <span class="kw">FROM</span> transfers
-  <span class="kw">GROUP BY</span> month
-)
-<span class="kw">SELECT</span> month, n,
-       LAG(n) <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> month) <span class="kw">AS</span> prev_n
-<span class="kw">FROM</span>   m
-<span class="kw">ORDER BY</span> month;</pre>
-  <ul>
-    <li><code>LAG(n)</code> gives n from the row before, in the order set inside OVER.</li>
-    <li>The first row has no previous row, so it gets NULL.</li>
-    <li><code>LEAD(n)</code> does the opposite: the next row's value.</li>
-    <li><code>LAG(n, 12)</code> looks 12 rows back, handy for "same month last year".</li>
-  </ul>
-  <p>Notice the CTE first. LAG works on rows, so you build one row per month, then compare months.</p>
-
-  <h3>2. Change and growth</h3>
-  <p>With the previous value on the same row, change and growth are simple arithmetic:</p>
-<pre data-try><span class="kw">WITH</span> m <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> substr(created_at, 1, 7) <span class="kw">AS</span> month, COUNT(*) <span class="kw">AS</span> n
-  <span class="kw">FROM</span> transfers <span class="kw">GROUP BY</span> month
-)
-<span class="kw">SELECT</span> month, n,
-       n - LAG(n) <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> month) <span class="kw">AS</span> change,
-       ROUND((n - LAG(n) <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> month)) * 100.0 / LAG(n) <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> month), 1) <span class="kw">AS</span> growth_pct
-<span class="kw">FROM</span>   m
-<span class="kw">ORDER BY</span> month;</pre>
-  <p>Growth % = (this − previous) × 100.0 ÷ previous. For rates, talk about the change in <b>percentage points</b> (7.5% to 9.0% is +1.5 points), not percent, which would be +20%. Getting that distinction right sounds sharp in an interview.</p>
-
-  <h3>3. LAG within each customer</h3>
-  <p>Add PARTITION BY to compare each transfer with the same customer's previous one:</p>
-<pre data-try><span class="kw">SELECT</span> customer_id, id, created_at,
-       ROUND(julianday(created_at) - julianday(LAG(created_at) <span class="kw">OVER</span> (<span class="kw">PARTITION BY</span> customer_id <span class="kw">ORDER BY</span> created_at)), 1) <span class="kw">AS</span> days_since_prev
-<span class="kw">FROM</span>   transfers
-<span class="kw">WHERE</span>  customer_id <span class="kw">IN</span> (7, 58)
-<span class="kw">ORDER BY</span> customer_id, created_at;</pre>
-  <p>Gaps between a customer's transfers are a real operations signal: a regular sender who suddenly stops might have had a bad experience.</p>
-
-  <h3>4. Running totals</h3>
-  <p>An aggregate with <code>OVER (ORDER BY …)</code> becomes a running total: it adds up everything from the first row to the current one.</p>
-<pre data-try><span class="kw">WITH</span> m <span class="kw">AS</span> (
-  <span class="kw">SELECT</span> substr(created_at, 1, 7) <span class="kw">AS</span> month, SUM(amount) <span class="kw">AS</span> volume
-  <span class="kw">FROM</span> transfers
-  <span class="kw">WHERE</span> status = 'COMPLETED' <span class="kw">AND</span> source_currency = 'SGD'
-  <span class="kw">GROUP BY</span> month
-)
-<span class="kw">SELECT</span> month, ROUND(volume, 2) <span class="kw">AS</span> volume,
-       ROUND(SUM(volume) <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> month), 2) <span class="kw">AS</span> running_total
-<span class="kw">FROM</span>   m
-<span class="kw">ORDER BY</span> month;</pre>
-  <p>Without ORDER BY inside OVER, <code>SUM(volume) OVER ()</code> gives the <i>grand</i> total on every row. That's the neat way to do "share of total" from Day 9: <code>volume * 100.0 / SUM(volume) OVER ()</code>.</p>
-<pre data-try><span class="kw">SELECT</span>   target_currency, COUNT(*) <span class="kw">AS</span> n,
-         ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) <span class="kw">OVER</span> (), 1) <span class="kw">AS</span> share_pct
-<span class="kw">FROM</span>     transfers
-<span class="kw">GROUP BY</span> target_currency
-<span class="kw">ORDER BY</span> n <span class="kw">DESC</span>;</pre>
-
-  <h3>5. Moving averages (bonus)</h3>
-  <p>A window can cover just the last few rows. A 3-month moving average smooths out noisy monthly numbers:</p>
-<pre data-try><span class="kw">WITH</span> m <span class="kw">AS</span> (<span class="kw">SELECT</span> substr(created_at, 1, 7) <span class="kw">AS</span> month, COUNT(*) <span class="kw">AS</span> n <span class="kw">FROM</span> transfers <span class="kw">GROUP BY</span> month)
-<span class="kw">SELECT</span> month, n,
-       ROUND(AVG(n) <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> month <span class="kw">ROWS BETWEEN</span> 2 <span class="kw">PRECEDING AND CURRENT ROW</span>), 1) <span class="kw">AS</span> avg_3m
-<span class="kw">FROM</span>   m <span class="kw">ORDER BY</span> month;</pre>
-
-  <h3>6. Common errors</h3>
-  <div class="tablewrap"><table class="ref">
-    <tr><th>Problem</th><th>Usually means</th></tr>
-    <tr><td>LAG gives values from other customers</td><td>Missing <code>PARTITION BY customer_id</code>.</td></tr>
-    <tr><td>Running total equals the grand total on every row</td><td>Missing <code>ORDER BY</code> inside OVER.</td></tr>
-    <tr><td>Growth is 0 or a whole number</td><td>Integer division. Use 100.0.</td></tr>
-    <tr><td>First row's change is NULL</td><td>Not an error: there's no previous row. Say so, or use <code>COALESCE</code> (Day 12).</td></tr>
-  </table></div>
-
-  <h3>Exercises</h3>
-  <div class="exlist"></div>
-</template>
-<template id="tpl12">  <div class="eyebrow">Day 12 of 14 · about 60 minutes</div>
-  <h2>NULLs and edge cases</h2>
-  <p>A query that runs isn't always a query that's right. Today is about the quiet ways numbers go wrong: missing values, dividing by zero, whole-number division, and conditions that skip rows without telling you. Interviewers like these because they separate careful analysts from the rest.</p>
-
-  <h3>1. A quick recap: what NULL does</h3>
-  <ul>
-    <li>Any comparison with NULL (<code>=</code>, <code>&lt;&gt;</code>, <code>&gt;</code>…) is neither true nor false, so the row is skipped.</li>
-    <li>Any arithmetic with NULL gives NULL: <code>5 + NULL</code> is NULL.</li>
-    <li><code>COUNT(column)</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code> and <code>MAX</code> ignore NULLs. <code>COUNT(*)</code> doesn't.</li>
-  </ul>
-<pre data-try><span class="kw">SELECT</span> status, COUNT(*) <span class="kw">AS</span> all_rows, COUNT(completed_at) <span class="kw">AS</span> with_completed_at, COUNT(failure_reason) <span class="kw">AS</span> with_reason
-<span class="kw">FROM</span>   transfers
-<span class="kw">GROUP BY</span> status;</pre>
-
-  <h3>2. The &lt;&gt; and NOT IN trap</h3>
-  <p>"How many transfers did not fail with TIMEOUT?" looks easy:</p>
-<pre data-try><span class="kw">SELECT</span> COUNT(*) <span class="kw">FROM</span> transfers <span class="kw">WHERE</span> failure_reason &lt;&gt; 'TIMEOUT';</pre>
-  <p>That gives about 100, not about 1,490, because every transfer with no failure reason (NULL) is silently skipped. Say what you mean:</p>
-<pre data-try><span class="kw">SELECT</span> COUNT(*) <span class="kw">FROM</span> transfers <span class="kw">WHERE</span> failure_reason <span class="kw">IS NULL OR</span> failure_reason &lt;&gt; 'TIMEOUT';</pre>
-  <p>The same happens with <code>NOT IN</code>. And there's a nastier version: if the list inside <code>NOT IN (subquery)</code> contains even one NULL, the whole condition returns nothing at all. When excluding with a subquery, use <code>NOT EXISTS</code> or a LEFT JOIN ... IS NULL instead.</p>
-
-  <h3>3. COALESCE: a default for missing values</h3>
-  <p><code>COALESCE(a, b)</code> gives a, or b if a is NULL. Use it to make output readable, or to turn "nothing" into 0:</p>
-<pre data-try><span class="kw">SELECT</span> id, status, COALESCE(failure_reason, 'NONE') <span class="kw">AS</span> reason
-<span class="kw">FROM</span>   transfers
-<span class="kw">WHERE</span>  created_at &gt;= '2026-10-25';</pre>
-  <p>It's especially useful after a LEFT JOIN, where customers with no transfers get a NULL total. Showing 0 is clearer:</p>
-<pre data-try><span class="kw">SELECT</span>    c.id, c.name, ROUND(COALESCE(SUM(t.amount), 0), 2) <span class="kw">AS</span> total
-<span class="kw">FROM</span>      customers c
-<span class="kw">LEFT JOIN</span> transfers t <span class="kw">ON</span> t.customer_id = c.id <span class="kw">AND</span> t.status = 'COMPLETED'
-<span class="kw">WHERE</span>     c.country = 'SG'
-<span class="kw">GROUP BY</span>  c.id, c.name
-<span class="kw">ORDER BY</span>  total
-<span class="kw">LIMIT</span>     8;</pre>
-
-  <h3>4. Dividing by zero: NULLIF</h3>
-  <p>A ratio like completed ÷ cancelled breaks when cancelled is 0. PostgreSQL throws an error; SQLite quietly returns NULL. Either way, guard it with <code>NULLIF(x, 0)</code>, which turns 0 into NULL. Dividing by NULL gives NULL instead of an error:</p>
-<pre data-try><span class="kw">SELECT</span>   target_currency,
-         SUM(<span class="kw">CASE WHEN</span> status = 'COMPLETED' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>) * 1.0
-           / NULLIF(SUM(<span class="kw">CASE WHEN</span> status = 'PENDING' <span class="kw">THEN</span> 1 <span class="kw">ELSE</span> 0 <span class="kw">END</span>), 0) <span class="kw">AS</span> completed_per_pending
-<span class="kw">FROM</span>     transfers
-<span class="kw">GROUP BY</span> target_currency;</pre>
-  <p>Currencies with no pending transfers show NULL rather than crashing the whole report.</p>
-
-  <h3>5. Whole-number division, again</h3>
-<pre data-try><span class="kw">SELECT</span> 7 / 2 <span class="kw">AS</span> whole, 7 * 1.0 / 2 <span class="kw">AS</span> decimal, 7 / 2.0 <span class="kw">AS</span> also_decimal;</pre>
-  <p>Two whole numbers divide to a whole number in both SQLite and PostgreSQL. Whenever you divide counts, multiply by <code>1.0</code> (or <code>100.0</code> for a percentage) first. In PostgreSQL you'll also see <code>::numeric</code> used for this.</p>
-
-  <h3>6. Conditions in ON vs WHERE with LEFT JOIN</h3>
-  <p>A reminder from Day 4, because it's the most common LEFT JOIN bug: a condition on the right-hand table belongs in <b>ON</b> if you want to keep the rows that don't match. In WHERE, it removes them.</p>
-
-  <h3>7. A checklist before you trust a number</h3>
+  <h3>3. Top N per group</h3>
+  <p>This is the most common window question in interviews. "The 2 biggest SGD transfers to each target currency":</p>
   <ol>
-    <li>Does the row count make sense? (Joins multiplying rows, filters too strict.)</li>
-    <li>Could any column be NULL? (Comparisons skip them, COUNT(*) still counts them.)</li>
-    <li>Am I dividing whole numbers, or by something that could be 0?</li>
-    <li>Am I adding up different currencies?</li>
-    <li>Do my date ranges include the whole last day?</li>
+    <li>Number the rows within each currency, biggest first.</li>
+    <li>Keep rows numbered 1 or 2.</li>
   </ol>
-  <p>Running through this list out loud in an interview, even briefly, shows exactly the care an operations role needs.</p>
+<pre data-try data-rows="8">WITH ranked AS (
+  SELECT target_currency, id, amount,
+         ROW_NUMBER() OVER (PARTITION BY target_currency ORDER BY amount DESC) AS rn
+  FROM transfers
+  WHERE source_currency = 'SGD'
+)
+SELECT target_currency, id, amount
+FROM ranked
+WHERE rn &lt;= 2
+ORDER BY target_currency, amount DESC;</pre>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">Why not WHERE rn &lt;= 2 directly?</div>
+<pre data-try data-expect="error">SELECT id,
+       ROW_NUMBER() OVER (ORDER BY amount DESC) AS rn
+FROM transfers
+WHERE rn &lt;= 2;</pre>
+    <p class="vs-why">WHERE runs before SELECT, so <code>rn</code> doesn't exist yet. Window functions are worked out in SELECT.</p></div>
+    <div class="side b"><div class="vs-h">Wrap it in a CTE first</div>
+<pre data-try>WITH r AS (
+  SELECT id, amount, ROW_NUMBER() OVER (ORDER BY amount DESC) AS rn
+  FROM transfers
+)
+SELECT id, amount FROM r WHERE rn &lt;= 2;</pre>
+    <p class="vs-why">The CTE finishes first, so <code>rn</code> is a normal column you can filter on.</p></div>
+  </div>
+  <p>"Each customer's <b>first</b> transfer" is the same pattern with <code>ORDER BY created_at</code> and <code>WHERE rn = 1</code>.</p>
+
+  <h3>4. ROW_NUMBER vs RANK vs DENSE_RANK</h3>
+  <p>They only differ when there's a <b>tie</b>. Here are the three side by side on a small made-up list where B and C tie:</p>
+<pre data-try>WITH scores(name, points) AS (
+  VALUES ('A', 90), ('B', 80), ('C', 80), ('D', 70)
+)
+SELECT name, points,
+       ROW_NUMBER() OVER (ORDER BY points DESC) AS row_number,
+       RANK()       OVER (ORDER BY points DESC) AS rank,
+       DENSE_RANK() OVER (ORDER BY points DESC) AS dense_rank
+FROM scores;</pre>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Function</th><th>On a tie</th><th>Use when</th></tr>
+    <tr><td><code>ROW_NUMBER</code></td><td>Gives different numbers anyway (2, 3)</td><td>You need exactly N rows</td></tr>
+    <tr><td><code>RANK</code></td><td>Same number, then skips (2, 2, 4)</td><td>Like a sports table: "joint 2nd, then 4th"</td></tr>
+    <tr><td><code>DENSE_RANK</code></td><td>Same number, no gap (2, 2, 3)</td><td>"Top 3 distinct values", ties included</td></tr>
+  </table></div>
+  <p>If you use ROW_NUMBER and ties are possible, add a tie-break like <code>ORDER BY amount DESC, id</code> so the result is the same every time.</p>
+
+  <h3>5. Ranking totals</h3>
+  <p>You can rank the result of a GROUP BY. "Rank customers by number of transfers":</p>
+<pre data-try>SELECT customer_id, COUNT(*) AS n,
+       RANK() OVER (ORDER BY COUNT(*) DESC) AS rnk
+FROM transfers
+GROUP BY customer_id
+ORDER BY rnk, customer_id
+LIMIT 10;</pre>
+  <p>GROUP BY runs first and makes one row per customer. Then the window ranks those rows.</p>
+
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li>GROUP BY collapses rows; a window function keeps them and adds a column.</li>
+    <li><code>PARTITION BY</code> = "per group", <code>ORDER BY</code> inside OVER = "in this order".</li>
+    <li>Top N per group: ROW_NUMBER in a CTE, then <code>WHERE rn &lt;= N</code> outside.</li>
+    <li>ROW_NUMBER, RANK and DENSE_RANK only differ on ties.</li>
+  </ul></div>
 
   <h3>Exercises</h3>
   <div class="exlist"></div>
 </template>
-<template id="tpl13">  <div class="eyebrow">Day 13 of 14 · mock test · 60 minutes</div>
+<template id="tpl11">
+  <div class="eyebrow">Day 11 of 14 · about 75 minutes</div>
+  <h2>Windows over time: LAG and running totals</h2>
+  <p><b>What you'll learn today:</b> how to compare a row with the one before it ("up or down from last month?") and how to keep a running total. Both are everyday ops reporting questions.</p>
+
+  <h3>1. LAG: look at the previous row</h3>
+  <div class="plain"><b>In plain English:</b> <code>LAG(x)</code> means "the value of x on the row before this one". <code>LEAD(x)</code> means the row after.</div>
+  <p>First get monthly counts in a CTE, then put last month's number next to this month's:</p>
+<pre data-try data-rows="6">WITH monthly AS (
+  SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS n
+  FROM transfers
+  GROUP BY month
+)
+SELECT month, n,
+       LAG(n) OVER (ORDER BY month) AS prev_n,
+       n - LAG(n) OVER (ORDER BY month) AS change
+FROM monthly
+ORDER BY month;</pre>
+  <ul>
+    <li>The first month has no month before it, so <code>prev_n</code> is NULL, and so is the change. That's correct, not a bug.</li>
+    <li><code>ORDER BY month</code> inside OVER decides what "before" means. Without it, LAG has no idea which row is previous.</li>
+  </ul>
+  <p>For a percentage change, divide by the previous value, using 100.0 so the maths keeps decimals:</p>
+<pre data-try data-rows="6">WITH monthly AS (
+  SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS n
+  FROM transfers GROUP BY month
+)
+SELECT month, n,
+       ROUND((n - LAG(n) OVER (ORDER BY month)) * 100.0 / LAG(n) OVER (ORDER BY month), 1) AS pct_change
+FROM monthly
+ORDER BY month;</pre>
+
+  <h3>2. LAG per customer: time between transfers</h3>
+  <p>Add PARTITION BY and LAG looks at the previous row <i>for the same customer</i>. "How many days since this customer's last transfer?":</p>
+<pre data-try data-rows="8">SELECT customer_id, id, created_at,
+       ROUND(julianday(created_at) - julianday(LAG(created_at) OVER (PARTITION BY customer_id ORDER BY created_at)), 1) AS days_since_last
+FROM transfers
+WHERE customer_id &lt;= 2 AND created_at &gt;= '2026-08-01'
+ORDER BY customer_id, created_at;</pre>
+  <p>Each customer's first transfer shows NULL, because there's nothing before it for that customer.</p>
+
+  <h3>3. Running totals</h3>
+  <p>A running total adds each row onto everything before it. <code>SUM()</code> with an ORDER BY inside OVER does exactly that. The ORDER BY is what makes the difference:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">SUM(n) OVER ()</div>
+<pre data-try data-rows="6">WITH monthly AS (
+  SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS n
+  FROM transfers GROUP BY month
+)
+SELECT month, n, SUM(n) OVER () AS total
+FROM monthly ORDER BY month;</pre>
+    <p class="vs-why">No ORDER BY: every row gets the same grand total.</p></div>
+    <div class="side b"><div class="vs-h">SUM(n) OVER (ORDER BY month)</div>
+<pre data-try data-rows="6">WITH monthly AS (
+  SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS n
+  FROM transfers GROUP BY month
+)
+SELECT month, n, SUM(n) OVER (ORDER BY month) AS running_total
+FROM monthly ORDER BY month;</pre>
+    <p class="vs-why">With ORDER BY: each row adds up everything up to and including itself.</p></div>
+  </div>
+  <p>The left version is handy too: it's the short way to do Day 9's "share of total". <code>n * 100.0 / SUM(n) OVER ()</code> gives each row's share without a separate step.</p>
+
+  <h3>4. Moving averages</h3>
+  <p>A moving average smooths out bumpy numbers by averaging each row with a few before it. You tell the window how many rows to include with <code>ROWS BETWEEN</code>:</p>
+<pre data-try data-rows="6">WITH monthly AS (
+  SELECT substr(created_at, 1, 7) AS month, COUNT(*) AS n
+  FROM transfers GROUP BY month
+)
+SELECT month, n,
+       ROUND(AVG(n) OVER (ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 1) AS avg_3m
+FROM monthly
+ORDER BY month;</pre>
+  <p><code>2 PRECEDING AND CURRENT ROW</code> = this row and the 2 before it, so a 3-month average. The first two months average fewer rows, because there aren't 2 earlier months yet.</p>
+
+  <h3>5. Running totals per group</h3>
+  <p>Add PARTITION BY and the running total restarts for each group. "Each customer's cumulative SGD sent":</p>
+<pre data-try data-rows="8">SELECT customer_id, created_at, amount,
+       SUM(amount) OVER (PARTITION BY customer_id ORDER BY created_at) AS cumulative
+FROM transfers
+WHERE source_currency = 'SGD' AND customer_id &lt;= 3 AND created_at &gt;= '2026-07-01'
+ORDER BY customer_id, created_at;</pre>
+
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li><code>LAG(x) OVER (ORDER BY …)</code> gives the previous row's value; the first row gets NULL.</li>
+    <li>Add <code>PARTITION BY</code> to look back within each customer or currency only.</li>
+    <li><code>SUM() OVER ()</code> = grand total on every row. <code>SUM() OVER (ORDER BY …)</code> = running total.</li>
+    <li><code>ROWS BETWEEN 2 PRECEDING AND CURRENT ROW</code> = a 3-row moving window.</li>
+  </ul></div>
+
+  <h3>Exercises</h3>
+  <div class="exlist"></div>
+</template>
+<template id="tpl12">
+  <div class="eyebrow">Day 12 of 14 · about 60 minutes</div>
+  <h2>Traps: NULLs, division and dates</h2>
+  <p><b>What you'll learn today:</b> the small things that make a query run fine but give the wrong answer. Interviewers love these, because spotting them shows you check your numbers.</p>
+
+  <h3>1. NULL means "unknown", not "nothing"</h3>
+  <div class="plain"><b>In plain English:</b> NULL is a blank. Any comparison with a blank is "don't know", and WHERE only keeps rows where the answer is a definite yes.</div>
+  <p>Question: "how many transfers did <i>not</i> fail for an insufficient-balance reason?" The obvious query misses rows:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">Using &lt;&gt; only</div>
+<pre data-try>SELECT COUNT(*)
+FROM transfers
+WHERE failure_reason &lt;&gt; 'INSUFFICIENT_FUNDS';</pre>
+    <p class="vs-why">Successful transfers have a NULL reason. "NULL is not equal to X" is unknown, so they're all dropped.</p></div>
+    <div class="side b"><div class="vs-h">Handle NULL explicitly</div>
+<pre data-try>SELECT COUNT(*)
+FROM transfers
+WHERE failure_reason &lt;&gt; 'INSUFFICIENT_FUNDS'
+   OR failure_reason IS NULL;</pre>
+    <p class="vs-why">Now the blanks are counted too. Compare the two numbers.</p></div>
+  </div>
+  <p>The same happens with <code>NOT IN</code>. Whenever you filter with <code>&lt;&gt;</code> or <code>NOT IN</code> on a column that can be NULL, ask yourself: "what should happen to the blanks?"</p>
+
+  <h3>2. NULLs inside aggregates</h3>
+  <p>COUNT(column), SUM and AVG all skip NULLs. Usually that's what you want, but know it's happening:</p>
+<pre data-try>SELECT COUNT(*)               AS all_rows,
+       COUNT(completed_at)    AS has_completed_at,
+       COUNT(failure_reason)  AS has_reason
+FROM transfers;</pre>
+  <p>Three different numbers from the same table. <code>AVG</code> divides by the number of <i>non-NULL</i> values, so averaging a column with blanks is an average of the known ones only.</p>
+
+  <h3>3. COALESCE: fill in a blank</h3>
+  <p><code>COALESCE(a, b)</code> returns <code>a</code>, unless it's NULL, in which case it returns <code>b</code>. Use it to show a label instead of a blank, or 0 instead of NULL after a LEFT JOIN:</p>
+<pre data-try>SELECT COALESCE(failure_reason, 'none') AS reason, COUNT(*) AS n
+FROM transfers
+GROUP BY reason
+ORDER BY n DESC;</pre>
+<pre data-try data-rows="6">SELECT c.id, c.name, COALESCE(SUM(t.amount), 0) AS sent
+FROM customers c
+LEFT JOIN transfers t ON t.customer_id = c.id AND t.source_currency = 'SGD'
+GROUP BY c.id, c.name
+ORDER BY sent, c.id;</pre>
+  <p>Customers with no SGD transfers would show NULL without COALESCE. With it they show 0, which is what a reader expects.</p>
+
+  <h3>4. Whole-number division</h3>
+  <p>When both numbers are whole numbers, SQL throws away the decimals. This is the trap from Day 3 again, because it really is that common:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">Whole numbers</div>
+<pre data-try>SELECT 7 / 2 AS result, 3 * 100 / 7 AS pct;</pre>
+    <p class="vs-why">Gives 3 and 42. The decimals are cut off, not rounded.</p></div>
+    <div class="side b"><div class="vs-h">One decimal number</div>
+<pre data-try>SELECT 7 / 2.0 AS result, 3 * 100.0 / 7 AS pct;</pre>
+    <p class="vs-why">Gives 3.5 and 42.857… Just one decimal number in the sum is enough.</p></div>
+  </div>
+  <p>Rule of thumb: in any rate or percentage, write <code>100.0</code>, never <code>100</code>.</p>
+  <p>And dividing by zero? SQLite returns NULL; PostgreSQL gives an error. Guard it with <code>NULLIF(x, 0)</code>, which turns a 0 into NULL so the division quietly returns NULL instead:</p>
+<pre data-try>SELECT 10 * 100.0 / NULLIF(0, 0) AS safe_pct;</pre>
+
+  <h3>5. Date ranges: the end-of-day trap</h3>
+  <p>Our dates are text like <code>'2026-09-30 14:03:00'</code>. A range that ends on <code>'2026-09-30'</code> misses most of that day:</p>
+  <div class="vs">
+    <div class="side a"><div class="vs-h">BETWEEN with a date</div>
+<pre data-try>SELECT COUNT(*) FROM transfers
+WHERE created_at BETWEEN '2026-09-01' AND '2026-09-30';</pre>
+    <p class="vs-why"><code>'2026-09-30 14:03'</code> sorts after <code>'2026-09-30'</code>, so the last day is (mostly) left out.</p></div>
+    <div class="side b"><div class="vs-h">&gt;= start, &lt; next day</div>
+<pre data-try>SELECT COUNT(*) FROM transfers
+WHERE created_at &gt;= '2026-09-01' AND created_at &lt; '2026-10-01';</pre>
+    <p class="vs-why">Includes every moment of September and nothing of October. Use this form every time.</p></div>
+  </div>
+
+  <h3>6. Double counting after a join</h3>
+  <p>If one row on the left matches several on the right, it appears several times. Summing a left-side column then counts it more than once. The fix is usually to aggregate in a CTE first, then join (Day 8), or to count <code>DISTINCT</code> ids.</p>
+
+  <h3>7. A pre-submit checklist</h3>
+  <ul>
+    <li><b>Row count:</b> does the number of rows make sense? One per what?</li>
+    <li><b>NULLs:</b> do any filters use <code>&lt;&gt;</code> or <code>NOT IN</code> on a column with blanks?</li>
+    <li><b>Division:</b> is there a <code>100.0</code>? Could anything be divided by zero?</li>
+    <li><b>Dates:</b> do ranges use <code>&gt;=</code> and <code>&lt;</code>?</li>
+    <li><b>Currencies:</b> are you adding up amounts in different currencies?</li>
+    <li><b>Joins:</b> could a join have duplicated rows?</li>
+  </ul>
+
+  <div class="takeaways"><h3>Key takeaways</h3><ul>
+    <li><code>&lt;&gt;</code> and <code>NOT IN</code> silently drop NULL rows. Add <code>OR … IS NULL</code> when you need them.</li>
+    <li><code>COALESCE(x, 0)</code> turns blanks into a default.</li>
+    <li>Write <code>100.0</code> in rates; guard division with <code>NULLIF(x, 0)</code>.</li>
+    <li>Date ranges: <code>&gt;= start AND &lt; day after end</code>.</li>
+  </ul></div>
+
+  <h3>Exercises</h3>
+  <div class="exlist"></div>
+</template>
+<template id="tpl13">
+  <div class="eyebrow">Day 13 of 14 · mock test · 60 minutes</div>
   <h2>Mock test 1</h2>
   <p>Four questions in the style of a Wise payments operations SQL test. Treat it like the real thing: set the timer, don't open hints until you've tried, and write a one-line takeaway for each answer, the way you'd explain it to a stakeholder.</p>
   <div class="btns"><button class="primary timer" data-timer="60">Start 60-minute timer</button></div>
@@ -1312,7 +1609,8 @@ ranked <span class="kw">AS</span> (
   <h3>Questions</h3>
   <div class="exlist"></div>
 </template>
-<template id="tpl14">  <div class="eyebrow">Day 14 of 14 · mock test · 60 minutes</div>
+<template id="tpl14">
+  <div class="eyebrow">Day 14 of 14 · mock test · 60 minutes</div>
   <h2>Mock test 2</h2>
   <p>Four more interview-style questions: new versus returning customers, compliance holds by country, sign-up cohorts, and top transfers per currency. These lean on CTEs, LEFT JOINs and window functions together. Same rules as yesterday: timer on, hints last.</p>
   <div class="btns"><button class="primary timer" data-timer="60">Start 60-minute timer</button></div>
@@ -2063,11 +2361,26 @@ function renderDays(){
   $("days").innerHTML=PLAN.map((p,i)=>{const n=i+1,ready=!!DAYS[n];
     return `<button class="day ${n===day?"on":""} ${doneDays.has(n)?"done":""}" ${ready?`data-day="${n}"`:"disabled"} title="Day ${n}: ${p}${ready?"":" (coming soon)"}" aria-current="${n===day}">${doneDays.has(n)?"✓ ":""}D${n}</button>`}).join("")+`<button class="day practice ${day===0?"on":""}" data-practice="1">Weak spots</button>`;
 }
+const SQLKW="SELECT|DISTINCT|FROM|WHERE|AND|OR|NOT|IN|IS|NULL|AS|ON|JOIN|LEFT|INNER|GROUP|BY|HAVING|ORDER|ASC|DESC|LIMIT|CASE|WHEN|THEN|ELSE|END|WITH|OVER|PARTITION|BETWEEN|LIKE|UNION|ALL|ROWS|PRECEDING|CURRENT|ROW|EXISTS";
+function highlightSql(pre){if(pre.dataset.hl)return;const t=pre.textContent;const re=new RegExp(`('[^']*')|(--[^\\n]*)|\\b(${SQLKW})\\b`,"g");let out="",last=0,m;
+  while((m=re.exec(t))){out+=esc(t.slice(last,m.index));out+=m[1]?`<span class="str">${esc(m[1])}</span>`:m[2]?`<span class="cmt">${esc(m[2])}</span>`:`<span class="kw">${m[3]}</span>`;last=re.lastIndex}
+  out+=esc(t.slice(last));pre.innerHTML=out;pre.dataset.hl="1"}
+function renderPreviews(){
+  if(typeof db==="undefined"||!db)return;
+  document.querySelectorAll("#lessonBody pre[data-try]").forEach((p,i)=>{const pv=document.querySelector(`#lessonBody .preview[data-pvi="${i}"]`);if(!pv||pv.dataset.done)return;
+    const n=+(p.dataset.rows||5);let html="";
+    try{const r=db.exec(p.innerText.trim());if(!r.length)html=`<div class="pv-h">Result: no rows</div>`;else{const {columns,values}=r[0];
+      html=`<div class="pv-h">Result${values.length>n?`: first ${n} of ${values.length} rows`:values.length===1?": 1 row":`: ${values.length} rows`}</div><div class="out"><table><tr>${columns.map(c=>`<th>${esc(c)}</th>`).join("")}</tr>${values.slice(0,n).map(row=>`<tr>${row.map(v=>`<td>${v===null?'<span class="nullv">NULL</span>':esc(typeof v==="number"&&!Number.isInteger(v)?Math.round(v*10000)/10000:v)}</td>`).join("")}</tr>`).join("")}</table></div>`}}
+    catch(e){html=`<div class="pv-h">This example shows an error on purpose: ${esc(e.message)}</div>`}
+    pv.innerHTML=html;pv.dataset.done="1"});
+}
 function showDay(n){
   if(window._timer){clearInterval(window._timer);window._timer=null}
   day=n;EX=DAYS[n];cur=-1;curEx=null;loadPassed();
   $("lessonBody").innerHTML=$("tpl"+n).innerHTML;
-  document.querySelectorAll("#lessonBody pre[data-try]").forEach((p,i)=>{const b=document.createElement("button");b.className="trybtn";b.textContent="Try it";b.dataset.tryi=i;p.after(b)});
+  document.querySelectorAll("#lessonBody pre:not(.nohl)").forEach(p=>{if(!p.querySelector("span"))highlightSql(p)});
+  document.querySelectorAll("#lessonBody pre[data-try]").forEach((p,i)=>{const b=document.createElement("button");b.className="trybtn";b.textContent="Open in console";b.dataset.tryi=i;p.after(b);if(!p.hasAttribute("data-nopreview")){const pv=document.createElement("div");pv.className="preview";pv.dataset.pvi=i;p.after(pv)}});
+  renderPreviews();
   renderDays();renderEx();renderFinish();
   $("target").textContent="Free practice: try anything.";$("out").innerHTML="";
   try{location.hash="day-"+n}catch(e){}
@@ -2276,7 +2589,7 @@ document.addEventListener("click",ev=>{const b=ev.target.closest("[data-ask]");i
 
 window.addEventListener("hashchange",()=>{const m=location.hash.match(/day-(\d+)/);if(location.hash==="#practice"&&day!==0)showPractice();else if(m&&DAYS[+m[1]]&&+m[1]!==day)showDay(+m[1])});
 $("faqq").addEventListener("input",renderFaq);renderFaq();
-let SQLmod;initSqlJs().then(SQL=>{SQLmod=SQL;db=new SQL.Database();db.run(buildSQL());msg("Database ready. Ctrl+Enter runs your query.","ok");run()})
+let SQLmod;initSqlJs().then(SQL=>{SQLmod=SQL;db=new SQL.Database();db.run(buildSQL());renderPreviews();msg("Database ready. Ctrl+Enter runs your query.","ok");run()})
  .catch(e=>msg("The practice database didn't load: "+e.message,"bad"));
 </script>
 
