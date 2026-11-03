@@ -4,9 +4,11 @@
 
 Prefer your own copy, or want the built-in AI tutor? See [Run it](#run-it) for all three options.
 
-A free, self-paced SQL refresher that runs entirely in your browser. No install, no sign-up, no server. Just open the link above and start Day 1.
+A free, self-paced 14-day SQL course that runs entirely in your browser. No install, no sign-up, no server. Just open the link above and start Day 1.
 
-You practise on a realistic mock **payments database** (customers and cross-border transfers), so the questions look like the ones you'd get in a product ops, analyst or operations interview at a fintech.
+You practise on a realistic mock **payments database** (customers, cross-border transfers, exchange rates and countries), so the questions look like the ones you'd get in a product ops, analyst or operations interview at a fintech.
+
+**It learns from you.** Every answer you check is tracked by skill. The course itself is the same for everyone, but your practice isn't: the **Weak spots** mode keeps serving more questions on the skills you struggle with, brings back anything you got wrong until you get it right first time, and eases off the ones you've mastered. The more you practise, the more it's tailored to you.
 
 ## What's inside
 
@@ -18,7 +20,7 @@ You practise on a realistic mock **payments database** (customers and cross-bord
 - **Compare with the model answer**: a side-by-side, part-by-part comparison of your query and the model answer.
 - **"Stuck? Common questions"**: a searchable FAQ that shows the questions most relevant to the exercise you're on.
 - **Step-by-step answer explanations**, in the order the database actually runs the query.
-- **Adaptive "Weak spots" practice** that tracks which skills you struggle with and gives you more questions on them, bringing back anything you got wrong until you get it right first time.
+- **Adaptive practice that learns from your progress and mistakes.** Every check is recorded against the skills that question tests (JOINs, HAVING, window functions…). The "Weak spots" view ranks your skills from "Needs work" to "Solid", and practice mode picks questions weighted toward your weakest ones, repeating missed questions until you get them right first time. The 14-day curriculum stays fixed; the practice adapts to you.
 - **Try counts** on every question ("Solved in 3 tries").
 - A read-only console, so you can't break the practice data.
 
@@ -111,26 +113,30 @@ This needs a Claude plan where artifacts can use Claude from inside the page. If
 
 ## Curriculum
 
-| Day | Topic | Status |
-|---|---|---|
-| 1 | SELECT, WHERE, ORDER BY, LIMIT, IN, BETWEEN, LIKE, NULL, dates | Ready |
-| 2 | COUNT, SUM, AVG, GROUP BY, HAVING, grouping by month | Ready |
-| 3 | CASE WHEN and rates | Coming |
-| 4 | JOINs | Coming |
-| 5 | Multi-table joins | Coming |
-| 6 | Dates | Coming |
-| 7 | Review | Coming |
-| 8 | CTEs | Coming |
-| 9 | Chained CTEs | Coming |
-| 10 | ROW_NUMBER and ranking | Coming |
-| 11 | LAG and running totals | Coming |
-| 12 | NULLs and edge cases | Coming |
-| 13 | Mock test 1 | Coming |
-| 14 | Mock test 2 | Coming |
+All 14 days are ready. Each has a beginner-friendly lesson with runnable examples, auto-checked exercises, and extra practice questions that feed the adaptive Weak spots mode.
+
+| Day | Topic |
+|---|---|
+| 1 | SELECT, WHERE, ORDER BY, LIMIT, IN, BETWEEN, LIKE, NULL, dates |
+| 2 | COUNT, SUM, AVG, GROUP BY, HAVING, grouping by month |
+| 3 | CASE WHEN, conditional counts and rates |
+| 4 | JOINs: INNER vs LEFT, aliases, finding what's missing |
+| 5 | Joining 3+ tables, currency conversion, checking joins |
+| 6 | Dates and times: date parts, date arithmetic, durations |
+| 7 | Review: choosing the right tool |
+| 8 | CTEs and subqueries |
+| 9 | Chaining CTEs, shares of a total, comparing periods |
+| 10 | Window functions: ROW_NUMBER, RANK, top N per group |
+| 11 | LAG, LEAD, growth, running totals, moving averages |
+| 12 | NULLs and edge cases: COALESCE, NULLIF, division traps |
+| 13 | Mock test 1 (timed, interview-style) |
+| 14 | Mock test 2 (timed, interview-style) |
+
+That's 75 auto-checked exercises plus 40 extra practice questions, every one with a hint, a plain-English plan and a step-by-step explanation of the answer.
 
 ## Notes
 
-- The practice database is **SQLite**, generated in the page from a fixed seed, so everyone gets the same data and the checker's answers are always consistent. Lessons point out where **PostgreSQL** differs.
+- The practice database is **SQLite** (with CTEs and window functions), generated in the page from a fixed seed, so everyone gets the same data and the checker's answers are always consistent. Lessons point out where **PostgreSQL** differs.
 - All data is made up.
 - The built-in "Ask Claude" tutor only works when the page is published as a Claude artifact. Everywhere else the panel becomes "Ask an AI", which copies a ready-made prompt for any AI chat.
 
