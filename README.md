@@ -1,6 +1,8 @@
 # SQL Bootcamp
 
-A free, self-paced SQL refresher that runs entirely in your browser. No install, no sign-up, no server.
+### ▶ [Start practising now: qibbles.github.io/sql-bootcamp](https://qibbles.github.io/sql-bootcamp/)
+
+A free, self-paced SQL refresher that runs entirely in your browser. No install, no sign-up, no server. Just open the link above and start Day 1.
 
 You practise on a realistic mock **payments database** (customers and cross-border transfers), so the questions look like the ones you'd get in a product ops, analyst or operations interview at a fintech.
 
@@ -21,6 +23,10 @@ You practise on a realistic mock **payments database** (customers and cross-bord
 Your progress is saved in your own browser (localStorage). Nothing is sent anywhere.
 
 ## Run it
+
+**Easiest: use the hosted version** at **https://qibbles.github.io/sql-bootcamp/**. Nothing to download.
+
+Want your own copy instead?
 
 **Option 1: just open it.** Download `index.html` and double-click it. It needs an internet connection the first time to load the SQL engine ([sql.js](https://github.com/sql-js/sql.js)) and fonts from public CDNs.
 
