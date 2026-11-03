@@ -108,6 +108,17 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
 .reveal{font-size:.92rem;color:var(--muted)}
 /* console */
 aside{position:sticky;top:max(16px,env(safe-area-inset-top,0px));min-width:0;display:grid;gap:12px}
+/* Desktop: lesson and console scroll independently */
+@media (min-width:901px){
+  html,body{height:100%}
+  html{overflow:hidden}
+  body{margin:0;display:flex;flex-direction:column;overflow:hidden;padding-block:20px 0}
+  header.top{flex:none;width:100%}
+  .wrap{flex:1;min-height:0;width:100%;align-items:stretch}
+  main,aside{height:100%;overflow-y:auto;overscroll-behavior:contain;padding-bottom:48px;scrollbar-gutter:stable}
+  main{padding-right:8px}
+  aside{position:static;align-content:start}
+}
 @media (max-width:900px){aside{position:static}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px;min-width:0}
 .panel h4{margin:0;font:600 .78rem var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
@@ -1668,7 +1679,7 @@ function showPractice(){
   renderDays();$("finish").innerHTML="";
   $("target").textContent="Free practice: try anything.";$("out").innerHTML="";
   try{location.hash="practice"}catch(e){}
-  window.scrollTo({top:0});
+  window.scrollTo({top:0});try{$("lesson").scrollTop=0}catch(e){}
 }
 function loadQuestion(){
   const q=nextQuestion();const st=stats();st.seq=(st.seq||0)+1;st.recent=[q.id,...(st.recent||[])].slice(0,3);saveStats(st);
@@ -2060,7 +2071,7 @@ function showDay(n){
   renderDays();renderEx();renderFinish();
   $("target").textContent="Free practice: try anything.";$("out").innerHTML="";
   try{location.hash="day-"+n}catch(e){}
-  window.scrollTo({top:0});
+  window.scrollTo({top:0});try{$("lesson").scrollTop=0}catch(e){}
 }
 function renderFinish(){
   const all=passed.size===EX.length,isDone=doneDays.has(day),next=DAYS[day+1];
