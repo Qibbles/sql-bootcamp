@@ -132,7 +132,7 @@ All 14 days are ready. Each has a beginner-friendly lesson with runnable example
 | 13 | Mock test 1 (timed, interview-style) |
 | 14 | Mock test 2 (timed, interview-style) |
 
-That's 75 auto-checked exercises plus 40 extra practice questions, every one with a hint, a plain-English plan and a step-by-step explanation of the answer.
+That's 78 auto-checked exercises plus 40 extra practice questions, every one with a hint, a plain-English plan and a step-by-step explanation of the answer.
 
 ## Notes
 
