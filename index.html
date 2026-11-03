@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="A free 14-day SQL refresher on a mock payments database. Runs entirely in your browser.">
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>SQL Bootcamp</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,600&display=swap">
+<style>
+/* Layout: lesson column on the left, a fixed-width practice console on the right; stacks to one column on phones */
+:root{
+  --bg:#f6f7f5; --surface:#ffffff; --sunk:#eef1ee; --fg:#1d2420; --muted:#5d6a63; --line:#d6ddd8;
+  --accent:#0f6e5c; --accent-soft:#dcefe9; --ok:#1d7a3a; --ok-soft:#e1f3e6; --bad:#b4352b; --bad-soft:#fbe6e3; --warn:#8a5b00;
+  --display:"Fraunces",Georgia,serif; --body:"Atkinson Hyperlegible",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121715; --surface:#1a201d; --sunk:#0e1311; --fg:#e4ebe7; --muted:#9aa8a1; --line:#2c3531;
+  --accent:#4cc3a6; --accent-soft:#16332c; --ok:#5fd07f; --ok-soft:#163222; --bad:#f08a7f; --bad-soft:#3a1b18; --warn:#e2b04a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121715; --surface:#1a201d; --sunk:#0e1311; --fg:#e4ebe7; --muted:#9aa8a1; --line:#2c3531;
+  --accent:#4cc3a6; --accent-soft:#16332c; --ok:#5fd07f; --ok-soft:#163222; --bad:#f08a7f; --bad-soft:#3a1b18; --warn:#e2b04a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,460px);gap:32px;align-items:start}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}}
+header.top{max-width:1180px;margin:0 auto 24px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:end;justify-content:space-between}
+h1{font:600 2.1rem/1.1 var(--display);margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0;max-width:60ch}
+.days{display:flex;flex-wrap:wrap;gap:6px}
+.day{font:600 .78rem var(--mono);padding:5px 9px;border-radius:6px;border:1px solid var(--line);color:var(--muted);background:var(--surface)}
+.day.on{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.day.done{color:var(--ok);border-color:var(--ok)}
+button.day{cursor:pointer}
+button.day:disabled{opacity:.45;cursor:default}
+.day.on.done{color:var(--bg);background:var(--ok);border-color:var(--ok)}
+.finish{margin-top:24px}
+pre[data-try]{margin-bottom:6px}
+.trybtn{font-size:.8rem;padding:4px 10px;margin:0 0 12px;color:var(--accent);border-color:var(--accent)}
+ol li{max-width:66ch}
+.ex>*,.panel>*{min-width:0}
+.ex pre,.reveal pre,pre.ans{white-space:pre-wrap;overflow-wrap:anywhere}
+.guide{display:grid;gap:8px;font-size:.9rem;border-radius:8px;padding:10px 12px;background:var(--sunk);border:1px solid var(--line)}
+.guide.badg{border-color:var(--bad)}.guide.okg{border-color:var(--ok)}
+.guide .gi{max-width:none}.guide ul,.steps ul{margin:4px 0;padding-left:18px}
+.guide details summary{cursor:pointer;font-weight:700;color:var(--accent)}
+.steps-h{font:600 .74rem var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:6px}
+.steps{margin:6px 0 0;padding-left:20px;display:grid;gap:6px;color:var(--fg)}
+.steps li{max-width:none}
+.reveal{color:var(--fg)}
+.focus{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+.ladder{display:flex;flex-wrap:wrap;gap:6px;font:600 .72rem var(--mono)}
+.ladder span{padding:2px 8px;border-radius:99px;background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.ladder span.on{color:var(--bad);border-color:var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips button,.askbtn{font-size:.8rem;padding:4px 10px;color:var(--accent);border-color:var(--accent)}
+.askbtn{margin:6px 0}
+.chat{display:grid;gap:8px;max-height:420px;overflow-y:auto}
+.chat:empty{display:none}
+.bubble{padding:8px 11px;border-radius:10px;font-size:.9rem;line-height:1.5;min-width:0;overflow-wrap:anywhere}
+.bubble p{margin:0 0 6px}.bubble p:last-child{margin:0}
+.bubble pre{white-space:pre-wrap;font-size:.8rem;margin:6px 0}
+.bubble.user{background:var(--accent-soft);justify-self:end;max-width:90%}
+.bubble.assistant{background:var(--sunk);border:1px solid var(--line)}
+textarea.tq{min-height:64px}
+.faqq{width:100%;font:.9rem var(--body);padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:var(--sunk);color:var(--fg)}
+.faqlist{display:grid;gap:4px;max-height:360px;overflow-y:auto}
+.faqlist details{border-bottom:1px solid var(--line);padding:4px 0}
+.faqlist summary{cursor:pointer;font-weight:700;font-size:.9rem}
+.faqlist p{margin:6px 0 4px;font-size:.88rem;color:var(--fg)}
+.guide details summary,.reveal details summary{cursor:pointer;font-weight:700;color:var(--accent)}
+table.cmp td{font-size:.82rem}table.cmp tr.same td:last-child{color:var(--ok)}table.cmp tr.diff td:last-child{color:var(--bad)}
+.day.practice{margin-left:6px;border-style:dashed}
+.skills{display:grid;gap:6px}
+.skill{display:grid;grid-template-columns:minmax(0,1fr) minmax(60px,1.2fr) auto;gap:10px;align-items:center;font-size:.92rem}
+.bar{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.bar span{display:block;height:100%;border-radius:99px;background:var(--muted)}
+.bar .weak{background:var(--bad)}.bar .shaky{background:var(--warn)}.bar .solid{background:var(--ok)}
+main{min-width:0}
+.eyebrow{font:600 .75rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h2{font:600 1.55rem/1.2 var(--display);margin:4px 0 12px;text-wrap:balance}
+h3{font:700 1.05rem var(--body);margin:28px 0 8px}
+p,li{max-width:66ch}
+code{font:.88em var(--mono);background:var(--sunk);padding:1px 5px;border-radius:4px}
+pre{font:.86rem/1.5 var(--mono);background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;margin:10px 0}
+.kw{color:var(--accent);font-weight:600}
+table.ref{border-collapse:collapse;font-size:.92rem;margin:8px 0}
+.tablewrap{overflow-x:auto}
+table.ref td,table.ref th{border-bottom:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+table.ref th{font:600 .74rem var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.note{border-left:3px solid var(--warn);padding:6px 12px;background:var(--sunk);border-radius:0 6px 6px 0;font-size:.94rem}
+/* exercises */
+.ex{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 16px;margin:14px 0;display:grid;gap:8px}
+.ex-head{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+.ex-title{font-weight:700}
+.pill{font:600 .72rem var(--mono);padding:2px 8px;border-radius:99px;background:var(--sunk);color:var(--muted)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button{font:600 .85rem var(--body);border-radius:7px;padding:7px 12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.reveal{font-size:.92rem;color:var(--muted)}
+/* console */
+aside{position:sticky;top:max(16px,env(safe-area-inset-top,0px));min-width:0;display:grid;gap:12px}
+@media (max-width:900px){aside{position:static}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px;min-width:0}
+.panel h4{margin:0;font:600 .78rem var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+textarea{width:100%;min-height:150px;resize:vertical;font:.9rem/1.5 var(--mono);background:var(--sunk);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px}
+.target{font-size:.85rem;color:var(--muted)}
+.target b{color:var(--fg)}
+.out{overflow:auto;max-height:340px;border:1px solid var(--line);border-radius:8px}
+.out table{border-collapse:collapse;font:.8rem var(--mono);font-variant-numeric:tabular-nums;width:max-content;min-width:100%}
+.out th,.out td{padding:5px 9px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:left}
+.out th{position:sticky;top:0;background:var(--sunk);color:var(--muted)}
+.msg{font-size:.88rem;padding:8px 10px;border-radius:7px}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.info{background:var(--sunk);color:var(--muted)}
+details.schema summary{cursor:pointer;font-weight:700}
+.schema pre{font-size:.8rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div>
+    <h1>SQL Bootcamp</h1>
+    <p class="sub">Fourteen short lessons on a mock payments database, from rusty to writing joins, CTEs and window functions from a blank page.</p>
+  </div>
+  <nav class="days" id="days" aria-label="Lesson days"></nav>
+</header>
+
+<div class="wrap">
+<main id="lesson">
+<div id="lessonBody"></div>
+<div class="finish" id="finish"></div>
+</main>
+
+<aside>
+  <div class="panel">
+    <h4>Console</h4>
+    <div class="target" id="target">Free practice: try anything.</div>
+    <label for="sql" class="target">Your query</label>
+    <textarea id="sql" spellcheck="false">SELECT * FROM transfers LIMIT 5;</textarea>
+    <div class="btns">
+      <button class="primary" id="run">Run</button>
+      <button id="check">Check</button>
+      <button id="clear">Free practice</button>
+      <button id="reset" title="Rebuild the practice data from scratch">Reset data</button>
+    </div>
+    <div id="msg" class="msg info">Loading the database…</div>
+    <div id="guide" class="guide" hidden></div>
+    <div class="out" id="out"></div>
+  </div>
+  <div class="panel" id="tutor" hidden>
+    <h4>Ask Claude</h4>
+    <div class="target" id="tctx">Ask anything about SQL, the lesson, or the question you're on. Claude sees the question, the model answer, your latest query and the feedback you got.</div>
+    <div class="chips" id="tchips">
+      <button data-ask="Why is the model answer written the way it is? Walk me through it like I'm new to SQL.">Why this answer?</button>
+      <button data-ask="What's wrong with my query, and what should I change? Don't just give me the full answer; point me in the right direction.">What's wrong with mine?</button>
+      <button data-ask="Explain the idea behind this question more simply, with a tiny example.">Explain more simply</button>
+    </div>
+    <div class="chat" id="tchat" aria-live="polite"></div>
+    <label for="tq" class="target">Your question</label>
+    <textarea id="tq" class="tq" placeholder="e.g. Why do we need HAVING here instead of WHERE?"></textarea>
+    <div class="btns"><button class="primary" id="tsend">Ask</button><button id="tstop" hidden>Stop</button><button id="tclear">New conversation</button></div>
+    <div class="target" id="tnote"></div>
+  </div>
+  <div class="panel" id="faq">
+    <h4>Stuck? Common questions</h4>
+    <label for="faqq" class="target">Search the questions</label>
+    <input id="faqq" class="faqq" type="search" placeholder="e.g. HAVING, NULL, dates">
+    <div class="target" id="faqhead">Common questions</div>
+    <div id="faqlist" class="faqlist"></div>
+  </div>
+  <div class="panel">
+    <details class="schema" open>
+      <summary>Tables</summary>
+<pre>customers
+  id, name, country, segment,
+  signup_date
+
+transfers
+  id, customer_id,
+  source_currency, target_currency,
+  amount        -- in source currency
+  fee           -- in source currency
+  status        -- COMPLETED, FAILED,
+                -- PENDING, CANCELLED
+  failure_reason -- NULL unless FAILED
+  created_at, completed_at</pre>
+      <p class="target">About 120 customers and 1,500 transfers, Nov 2025 to Oct 2026. Example data only.</p>
+    </details>
+  </div>
+</aside>
+</div>
+
+<template id="tpl1">
+  <div class="eyebrow">Day 1 of 14 · about 75 minutes</div>
+  <h2>Pulling rows: SELECT, WHERE, ORDER BY</h2>
+  <p>Today you learn how to ask a database for specific rows from one table. By the end you'll be able to answer questions like "show me every failed SGD transfer over S$1,000 from last month, biggest first". Every query you write at Wise starts with what's on this page.</p>
+  <p class="note">Every grey code box with a <b>Try it</b> button can be run straight away. Click it, look at the result in the console, then change something small and run it again. Changing things and seeing what breaks is the fastest way to learn.</p>
+
+  <h3>1. What a database table is</h3>
+  <p>A table is like a spreadsheet tab. It has <b>columns</b> (the headings across the top) and <b>rows</b> (one line per record). Our <code>transfers</code> table has one row per money transfer. Here are three rows from it:</p>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>id</th><th>customer_id</th><th>source_currency</th><th>target_currency</th><th>amount</th><th>status</th><th>created_at</th></tr>
+    <tr><td>1</td><td>58</td><td>SGD</td><td>INR</td><td>420.50</td><td>COMPLETED</td><td>2026-03-14 09:12:00</td></tr>
+    <tr><td>2</td><td>7</td><td>MYR</td><td>USD</td><td>1250.00</td><td>FAILED</td><td>2026-03-14 11:40:00</td></tr>
+    <tr><td>3</td><td>58</td><td>SGD</td><td>PHP</td><td>88.20</td><td>PENDING</td><td>2026-10-30 18:05:00</td></tr>
+  </table></div>
+  <p>A few words you'll hear a lot:</p>
+  <ul>
+    <li><b>Query</b>: a question you write in SQL. The database answers with a small table called the <b>result</b>.</li>
+    <li><b>Column</b> or <b>field</b>: one kind of information, like <code>amount</code>.</li>
+    <li><b>Row</b> or <b>record</b>: one transfer.</li>
+    <li><b>id</b>: a unique number for each row. No two transfers share an id.</li>
+    <li><b>customer_id</b>: points to a row in the <code>customers</code> table. Customer 58 made transfers 1 and 3. You'll connect the two tables on Day 4.</li>
+  </ul>
+  <p>The full list of columns is in the <b>Tables</b> box beside the console. Keep glancing at it while you work.</p>
+
+  <h3>2. Your first query: SELECT and FROM</h3>
+  <p>The smallest useful query has two parts. <code>SELECT</code> says which columns you want. <code>FROM</code> says which table to look in.</p>
+<pre data-try><span class="kw">SELECT</span> id, amount, status
+<span class="kw">FROM</span> transfers;</pre>
+  <p>Read it out loud as plain English: "Select the id, amount and status from transfers." That gives you every row, but only those three columns.</p>
+  <ul>
+    <li>Separate column names with commas. No comma after the last one.</li>
+    <li><code>SELECT *</code> means "all columns". Handy for a first look at a table, but in real work list the columns you need.</li>
+    <li>The semicolon <code>;</code> marks the end of the query.</li>
+    <li>SQL doesn't care about capitals or line breaks. <code>select id from transfers</code> works too. Writing keywords in capitals and putting each part on its own line just makes it easier to read.</li>
+  </ul>
+<pre data-try><span class="kw">SELECT</span> *
+<span class="kw">FROM</span> customers;</pre>
+
+  <h3>3. LIMIT: just show me a few</h3>
+  <p>Tables can have millions of rows. <code>LIMIT</code> stops after a set number, which is the polite way to take a first look.</p>
+<pre data-try><span class="kw">SELECT</span> *
+<span class="kw">FROM</span> transfers
+<span class="kw">LIMIT</span> 5;</pre>
+  <p>Without ORDER BY (next section), which 5 rows you get isn't guaranteed. Use LIMIT for peeking, and pair it with ORDER BY when you want "the top 5" of something.</p>
+
+  <h3>4. WHERE: keep only the rows you want</h3>
+  <p><code>WHERE</code> is a filter. For every row, the database checks your condition. If it's true, the row stays. If it's false, the row is dropped.</p>
+<pre data-try><span class="kw">SELECT</span> id, amount, status
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> status = 'FAILED';</pre>
+  <p>Things to notice:</p>
+  <ul>
+    <li>Text values go in <b>single quotes</b>: <code>'FAILED'</code>. Without the quotes, the database thinks FAILED is a column name and gives you an error.</li>
+    <li>Text matching is exact. <code>'Failed'</code> won't match <code>'FAILED'</code>.</li>
+    <li>Numbers have no quotes: <code>amount &gt; 1000</code>.</li>
+    <li>It's a single <code>=</code> for "equals", not <code>==</code> like in Python.</li>
+  </ul>
+  <p>The comparison symbols:</p>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Symbol</th><th>Means</th><th>Example</th></tr>
+    <tr><td><code>=</code></td><td>equals</td><td><code>source_currency = 'SGD'</code></td></tr>
+    <tr><td><code>&lt;&gt;</code> or <code>!=</code></td><td>does not equal</td><td><code>status &lt;&gt; 'COMPLETED'</code></td></tr>
+    <tr><td><code>&gt;</code>, <code>&lt;</code></td><td>greater than, less than</td><td><code>amount &gt; 1000</code></td></tr>
+    <tr><td><code>&gt;=</code>, <code>&lt;=</code></td><td>greater (or less) than or equal to</td><td><code>amount &gt;= 1000</code> includes 1000 itself</td></tr>
+  </table></div>
+
+  <h3>5. Combining conditions: AND, OR, NOT</h3>
+  <p><code>AND</code> means both conditions must be true. Each AND makes the result smaller.</p>
+<pre data-try><span class="kw">SELECT</span> id, source_currency, amount, status
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> status = 'FAILED'
+  <span class="kw">AND</span> source_currency = 'SGD';</pre>
+  <p><code>OR</code> means at least one must be true. Each OR makes the result bigger.</p>
+<pre data-try><span class="kw">SELECT</span> id, status
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> status = 'FAILED'
+   <span class="kw">OR</span> status = 'CANCELLED';</pre>
+  <p><b>The trap.</b> When you mix AND with OR, AND is worked out first, like multiplication before addition in maths. This query looks like "failed transfers to USD or EUR":</p>
+<pre data-try><span class="kw">SELECT</span> id, status, target_currency
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> status = 'FAILED' <span class="kw">AND</span> target_currency = 'USD'
+   <span class="kw">OR</span> target_currency = 'EUR';</pre>
+  <p>But the database reads it as "(failed AND USD) OR (any EUR transfer at all)". Run it and you'll see COMPLETED EUR transfers in the result. Fix it by adding brackets around the OR part:</p>
+<pre data-try><span class="kw">SELECT</span> id, status, target_currency
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> status = 'FAILED'
+  <span class="kw">AND</span> (target_currency = 'USD' <span class="kw">OR</span> target_currency = 'EUR');</pre>
+  <p>Rule of thumb: whenever you mix AND and OR, put brackets in, even if you think you don't need them.</p>
+
+  <h3>6. Shortcuts: IN, BETWEEN, LIKE</h3>
+  <p><b>IN</b> checks against a list. It's a tidier OR, and it avoids the trap above:</p>
+<pre data-try><span class="kw">SELECT</span> id, status, target_currency
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> status = 'FAILED'
+  <span class="kw">AND</span> target_currency <span class="kw">IN</span> ('USD', 'EUR');</pre>
+  <p><code>NOT IN</code> is the opposite: everything except the list.</p>
+  <p><b>BETWEEN</b> checks a range, and includes both ends. <code>amount BETWEEN 100 AND 500</code> means the same as <code>amount &gt;= 100 AND amount &lt;= 500</code>.</p>
+<pre data-try><span class="kw">SELECT</span> id, amount
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> source_currency = 'SGD'
+  <span class="kw">AND</span> amount <span class="kw">BETWEEN</span> 100 <span class="kw">AND</span> 500;</pre>
+  <p><b>LIKE</b> matches a text pattern. <code>%</code> stands for "any characters, or none".</p>
+  <ul>
+    <li><code>name LIKE 'Tan%'</code>: starts with Tan</li>
+    <li><code>name LIKE '%Tan'</code>: ends with Tan</li>
+    <li><code>name LIKE '%Tan%'</code>: has Tan anywhere</li>
+  </ul>
+<pre data-try><span class="kw">SELECT</span> id, name, country
+<span class="kw">FROM</span> customers
+<span class="kw">WHERE</span> name <span class="kw">LIKE</span> '%Tan%';</pre>
+
+  <h3>7. NULL: the empty value</h3>
+  <p>Some cells have no value at all. That's called <b>NULL</b>. It isn't zero and it isn't blank text. It means "unknown" or "doesn't apply". In our data, <code>completed_at</code> is NULL for transfers that never completed, and <code>failure_reason</code> is NULL unless the transfer failed.</p>
+  <p>You can't use <code>=</code> with NULL. <code>completed_at = NULL</code> never matches anything, because "is this unknown thing equal to unknown?" has no answer. Use <code>IS NULL</code> and <code>IS NOT NULL</code> instead:</p>
+<pre data-try><span class="kw">SELECT</span> id, status, completed_at
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> completed_at <span class="kw">IS NULL</span>
+<span class="kw">LIMIT</span> 10;</pre>
+
+  <h3>8. Filtering dates</h3>
+  <p>Dates here are stored as text in the form <code>'YYYY-MM-DD HH:MM:SS'</code>, for example <code>'2026-10-15 14:03:00'</code>. Because the year comes first and every part is padded with zeros, sorting the text alphabetically also sorts it by time. So normal comparisons work.</p>
+  <p>To get everything in October 2026:</p>
+<pre data-try><span class="kw">SELECT</span> id, created_at
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> created_at &gt;= '2026-10-01'
+  <span class="kw">AND</span> created_at &lt; '2026-11-01';</pre>
+  <p>Why <code>&lt; '2026-11-01'</code> and not <code>&lt;= '2026-10-31'</code>? Because <code>'2026-10-31 18:00:00'</code> comes <i>after</i> <code>'2026-10-31'</code> when compared as text, so the second version would miss everything that happened on the last day. Always use "greater than or equal to the start" and "less than the start of the next period". This habit works in every database.</p>
+
+  <h3>9. ORDER BY: sort the result</h3>
+  <p><code>ORDER BY</code> sorts the rows. <code>ASC</code> is smallest first (the default). <code>DESC</code> is largest or newest first.</p>
+<pre data-try><span class="kw">SELECT</span> id, source_currency, amount
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> source_currency = 'SGD'
+<span class="kw">ORDER BY</span> amount <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> 10;</pre>
+  <p>That's "the 10 biggest SGD transfers". You can sort by more than one column. The second one only breaks ties in the first:</p>
+<pre data-try><span class="kw">SELECT</span> id, status, amount
+<span class="kw">FROM</span> transfers
+<span class="kw">ORDER BY</span> status, amount <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> 20;</pre>
+  <p>That sorts by status A to Z, and within each status, biggest amount first.</p>
+
+  <h3>10. DISTINCT: remove duplicates</h3>
+  <p><code>SELECT DISTINCT</code> shows each different value once. Useful for "what values exist in this column?"</p>
+<pre data-try><span class="kw">SELECT DISTINCT</span> country
+<span class="kw">FROM</span> customers
+<span class="kw">ORDER BY</span> country;</pre>
+  <p>With more than one column, it removes rows where <i>all</i> the columns repeat. <code>SELECT DISTINCT source_currency, target_currency</code> gives you each currency pair once.</p>
+
+  <h3>11. Putting it together</h3>
+  <p>The parts always go in this order when you write them:</p>
+<pre><span class="kw">SELECT</span>   columns
+<span class="kw">FROM</span>     table
+<span class="kw">WHERE</span>    conditions
+<span class="kw">ORDER BY</span> columns
+<span class="kw">LIMIT</span>    number;</pre>
+  <p>But the database actually works through them in a different order: FROM (find the table), WHERE (drop rows), SELECT (pick columns), ORDER BY (sort), LIMIT (cut). You don't need this today, but it explains a lot of confusing errors later, so remember it exists.</p>
+  <p>A full example, the kind of thing Wise would ask: "the 5 biggest failed SGD transfers in October 2026, and why they failed".</p>
+<pre data-try><span class="kw">SELECT</span>   id, amount, target_currency, failure_reason, created_at
+<span class="kw">FROM</span>     transfers
+<span class="kw">WHERE</span>    status = 'FAILED'
+  <span class="kw">AND</span>    source_currency = 'SGD'
+  <span class="kw">AND</span>    created_at &gt;= '2026-10-01'
+  <span class="kw">AND</span>    created_at &lt; '2026-11-01'
+<span class="kw">ORDER BY</span> amount <span class="kw">DESC</span>
+<span class="kw">LIMIT</span>    5;</pre>
+
+  <h3>12. Common errors and what they mean</h3>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Error says</th><th>Usually means</th></tr>
+    <tr><td><code>no such column: FAILED</code></td><td>You forgot the quotes. Write <code>'FAILED'</code>.</td></tr>
+    <tr><td><code>no such column: amout</code></td><td>Typo in a column name. Check the Tables box.</td></tr>
+    <tr><td><code>near "FROM": syntax error</code></td><td>Often a comma after the last column in SELECT.</td></tr>
+    <tr><td><code>incomplete input</code></td><td>A missing closing quote or bracket.</td></tr>
+    <tr><td>No error, but 0 rows</td><td>Check spelling and capitals in your text values, and whether you used <code>= NULL</code>.</td></tr>
+  </table></div>
+  <p class="note">This page runs SQLite. Everything on Day 1 works the same in PostgreSQL, which is what Wise most likely uses. Where the two differ later on, the lesson shows both.</p>
+
+  <h3>Exercises</h3>
+  <p>Click <b>Work on this</b>, write your query in the console, press <b>Run</b> to see the result, then <b>Check</b>. Column names don't need to match mine, only the values and, where it says so, the order. If you're stuck for more than 5 minutes, use the hint before the answer.</p>
+  <div class="exlist"></div>
+</template>
+<template id="tpl2">
+  <div class="eyebrow">Day 2 of 14 · about 75 minutes</div>
+  <h2>Summarising: COUNT, SUM, GROUP BY, HAVING</h2>
+  <p>Yesterday every query returned rows from the table as they are. Today you'll turn thousands of rows into a handful of numbers: how many, how much, what's the average, broken down by currency or by month. This is the bread and butter of operations analysis, and almost every interview question uses it.</p>
+
+  <h3>1. Aggregate functions: many rows in, one number out</h3>
+  <p>An <b>aggregate function</b> takes a whole column of values and squashes them into one. Think of the SUM or AVERAGE you'd put at the bottom of a spreadsheet column.</p>
+<pre data-try><span class="kw">SELECT</span> COUNT(*)
+<span class="kw">FROM</span> transfers;</pre>
+  <p>That returns one row with one number: how many transfers there are. <code>COUNT(*)</code> literally means "count the rows".</p>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Function</th><th>What it does</th><th>Example</th></tr>
+    <tr><td><code>COUNT(*)</code></td><td>Counts rows</td><td>How many transfers?</td></tr>
+    <tr><td><code>COUNT(column)</code></td><td>Counts rows where that column is <i>not</i> NULL</td><td><code>COUNT(completed_at)</code> counts finished transfers</td></tr>
+    <tr><td><code>COUNT(DISTINCT column)</code></td><td>Counts different values</td><td><code>COUNT(DISTINCT customer_id)</code>: how many customers</td></tr>
+    <tr><td><code>SUM(column)</code></td><td>Adds them up</td><td>Total fees</td></tr>
+    <tr><td><code>AVG(column)</code></td><td>Average</td><td>Average transfer size</td></tr>
+    <tr><td><code>MIN(column)</code>, <code>MAX(column)</code></td><td>Smallest, largest. Works on dates too.</td><td>First and last transfer date</td></tr>
+  </table></div>
+  <p>You can use several in one query, and combine them with WHERE. WHERE runs first, so it decides which rows get counted:</p>
+<pre data-try><span class="kw">SELECT</span> COUNT(*), SUM(fee), AVG(amount), MIN(created_at), MAX(created_at)
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> source_currency = 'SGD'
+  <span class="kw">AND</span> status = 'COMPLETED';</pre>
+
+  <h3>2. Naming and rounding the results: AS and ROUND</h3>
+  <p>The column headings in that last result were ugly, like <code>AVG(amount)</code>. Use <code>AS</code> to give a result column a name. It's called an <b>alias</b>.</p>
+  <p>Averages also come out with lots of decimals. <code>ROUND(value, 2)</code> rounds to 2 decimal places. You can wrap one function inside another.</p>
+<pre data-try><span class="kw">SELECT</span> COUNT(*)              <span class="kw">AS</span> transfers,
+       ROUND(SUM(fee), 2)    <span class="kw">AS</span> total_fees,
+       ROUND(AVG(amount), 2) <span class="kw">AS</span> avg_amount
+<span class="kw">FROM</span> transfers
+<span class="kw">WHERE</span> source_currency = 'SGD'
+  <span class="kw">AND</span> status = 'COMPLETED';</pre>
+  <p>Read <code>ROUND(AVG(amount), 2)</code> from the inside out: first average the amounts, then round that to 2 decimals.</p>
+
+  <h3>3. GROUP BY: one answer per group</h3>
+  <p>So far you get one number for the whole table. Usually you want a number <i>per something</i>: per status, per currency, per customer. That's what <code>GROUP BY</code> does.</p>
+<pre data-try><span class="kw">SELECT</span>   status, COUNT(*) <span class="kw">AS</span> transfers
+<span class="kw">FROM</span>     transfers
+<span class="kw">GROUP BY</span> status;</pre>
+  <p>Here's what happens behind the scenes:</p>
+  <ol>
+    <li>The database sorts all 1,500 rows into piles, one pile per different <code>status</code>. So a COMPLETED pile, a FAILED pile, and so on.</li>
+    <li>It runs <code>COUNT(*)</code> on each pile separately.</li>
+    <li>It returns one row per pile.</li>
+  </ol>
+  <p>A small picture of it, using 6 rows:</p>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Rows going in</th><th></th><th>Piles</th><th></th><th>Result</th></tr>
+    <tr><td>COMPLETED<br>FAILED<br>COMPLETED<br>PENDING<br>COMPLETED<br>FAILED</td><td>→</td><td>COMPLETED, COMPLETED, COMPLETED<br>FAILED, FAILED<br>PENDING</td><td>→</td><td>COMPLETED | 3<br>FAILED | 2<br>PENDING | 1</td></tr>
+  </table></div>
+  <p>You can group by more than one column. Each different <i>combination</i> becomes a pile:</p>
+<pre data-try><span class="kw">SELECT</span>   source_currency, status, COUNT(*) <span class="kw">AS</span> transfers
+<span class="kw">FROM</span>     transfers
+<span class="kw">GROUP BY</span> source_currency, status
+<span class="kw">ORDER BY</span> source_currency, status;</pre>
+
+  <h3>4. The golden rule of GROUP BY</h3>
+  <p><b>Every column in SELECT must either be inside an aggregate function, or be listed in GROUP BY.</b></p>
+  <p>Why? After grouping, each pile becomes one row. If you ask for <code>amount</code> without SUM or AVG, the database doesn't know which of the many amounts in that pile to show you.</p>
+<pre><span style="color:var(--muted)">-- Wrong: amount isn't grouped or aggregated</span>
+<span class="kw">SELECT</span> status, amount, COUNT(*) <span class="kw">FROM</span> transfers <span class="kw">GROUP BY</span> status;
+
+<span style="color:var(--muted)">-- Right: amount is summed</span>
+<span class="kw">SELECT</span> status, SUM(amount), COUNT(*) <span class="kw">FROM</span> transfers <span class="kw">GROUP BY</span> status;</pre>
+  <p class="note">PostgreSQL gives you an error for the wrong version. SQLite (this page) quietly picks a random amount and carries on, which is worse because you won't notice. Follow the rule anyway, since the interview will almost certainly use PostgreSQL.</p>
+
+  <h3>5. Sorting grouped results</h3>
+  <p>You can ORDER BY an aggregate or its alias. "Which target currencies get the most SGD transfers?":</p>
+<pre data-try><span class="kw">SELECT</span>   target_currency, COUNT(*) <span class="kw">AS</span> transfers
+<span class="kw">FROM</span>     transfers
+<span class="kw">WHERE</span>    source_currency = 'SGD'
+<span class="kw">GROUP BY</span> target_currency
+<span class="kw">ORDER BY</span> transfers <span class="kw">DESC</span>, target_currency;</pre>
+  <p>The second sort column, <code>target_currency</code>, breaks ties when two currencies have the same count. Several exercises ask for this, so the order is always predictable.</p>
+
+  <h3>6. HAVING: filtering the groups</h3>
+  <p>Say you want only the customers with 18 or more transfers. Your first instinct might be <code>WHERE COUNT(*) &gt;= 18</code>. That gives an error. Here's why.</p>
+  <p>Remember the order the database works in. It's now:</p>
+<pre>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT</pre>
+  <p>WHERE runs <i>before</i> the rows are grouped, so the counts don't exist yet. <code>HAVING</code> runs <i>after</i> grouping, so it can see them.</p>
+  <ul>
+    <li><b>WHERE</b> filters individual rows. "Only completed transfers."</li>
+    <li><b>HAVING</b> filters whole groups. "Only customers with 18 or more."</li>
+  </ul>
+<pre data-try><span class="kw">SELECT</span>   customer_id, COUNT(*) <span class="kw">AS</span> transfers
+<span class="kw">FROM</span>     transfers
+<span class="kw">WHERE</span>    status = 'COMPLETED'          <span style="color:var(--muted)">-- 1. drop non-completed rows</span>
+<span class="kw">GROUP BY</span> customer_id                   <span style="color:var(--muted)">-- 2. one pile per customer</span>
+<span class="kw">HAVING</span>   COUNT(*) &gt;= 15                <span style="color:var(--muted)">-- 3. keep piles with 15+</span>
+<span class="kw">ORDER BY</span> transfers <span class="kw">DESC</span>;</pre>
+  <p>Notice HAVING uses <code>COUNT(*)</code> again rather than the alias <code>transfers</code>. PostgreSQL doesn't let you use the alias in HAVING, because SELECT hasn't run yet when HAVING runs. Repeating the aggregate always works.</p>
+
+  <h3>7. Grouping by month</h3>
+  <p><code>created_at</code> has the full date and time, like <code>'2026-10-15 14:03:00'</code>. If you grouped by it directly, nearly every row would be its own group. You need to cut it down to just the month first.</p>
+  <p><code>substr(text, start, length)</code> takes part of a piece of text. Counting starts at 1, so <code>substr(created_at, 1, 7)</code> means "start at character 1, take 7 characters":</p>
+<pre>2 0 2 6 - 1 0 - 1 5   1 4 : 0 3 : 0 0
+1 2 3 4 5 6 7
+└──── '2026-10' ────┘</pre>
+  <p>Every October 2026 transfer becomes <code>'2026-10'</code>, so they all land in the same pile:</p>
+<pre data-try><span class="kw">SELECT</span>   substr(created_at, 1, 7) <span class="kw">AS</span> month,
+         COUNT(*) <span class="kw">AS</span> transfers
+<span class="kw">FROM</span>     transfers
+<span class="kw">GROUP BY</span> month
+<span class="kw">ORDER BY</span> month;</pre>
+  <p>Other cuts using the same idea: <code>substr(created_at, 1, 4)</code> for year, <code>substr(created_at, 1, 10)</code> for day.</p>
+  <p>In PostgreSQL, dates are real date values rather than text, and you'd write this instead:</p>
+<pre><span class="kw">SELECT</span>   DATE_TRUNC('month', created_at) <span class="kw">AS</span> month, COUNT(*)
+<span class="kw">FROM</span>     transfers
+<span class="kw">GROUP BY</span> 1
+<span class="kw">ORDER BY</span> 1;</pre>
+  <p><code>GROUP BY 1</code> means "group by the 1st column in SELECT". It saves retyping long expressions and is common in analyst work.</p>
+
+  <h3>8. A money trap: don't mix currencies</h3>
+  <p>Our <code>amount</code> column is in the <i>source</i> currency. Some rows are SGD, some are IDR, where 1 SGD is about 12,000 IDR. Running <code>SUM(amount)</code> across all of them adds SGD to rupiah, which gives a meaningless number.</p>
+  <p>When you add up money, either filter to one currency, or group by currency so each total stays separate:</p>
+<pre data-try><span class="kw">SELECT</span>   source_currency, ROUND(SUM(amount), 2) <span class="kw">AS</span> total_sent
+<span class="kw">FROM</span>     transfers
+<span class="kw">WHERE</span>    status = 'COMPLETED'
+<span class="kw">GROUP BY</span> source_currency;</pre>
+  <p>Spotting traps like this in an interview, and saying so out loud, scores points. It shows you think about what the numbers mean, not just whether the query runs.</p>
+
+  <h3>9. Common errors and what they mean</h3>
+  <div class="tablewrap"><table class="ref">
+    <tr><th>Problem</th><th>Usually means</th></tr>
+    <tr><td><code>misuse of aggregate: COUNT()</code></td><td>You put an aggregate in WHERE. Move that condition to HAVING.</td></tr>
+    <tr><td>One row per transfer instead of per group</td><td>You grouped by a column that's different on every row, like <code>id</code> or full <code>created_at</code>.</td></tr>
+    <tr><td>Strange or random values in a column</td><td>That column isn't in GROUP BY or inside an aggregate. Check the golden rule.</td></tr>
+    <tr><td>Count looks too big</td><td>Did you need <code>COUNT(DISTINCT customer_id)</code> instead of <code>COUNT(*)</code>?</td></tr>
+  </table></div>
+
+  <h3>Exercises</h3>
+  <p>Same as yesterday: <b>Work on this</b>, write, <b>Run</b>, <b>Check</b>. Before writing each one, say to yourself what one row of the answer represents: "one row per status", "one row per customer". That tells you what goes in GROUP BY.</p>
+  <div class="exlist"></div>
+</template>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-asm.js"></script>
+<script>
+const PLAN=["SELECT & WHERE","GROUP BY","CASE & rates","JOINs","Multi-joins","Dates","Review","CTEs","Chained CTEs","ROW_NUMBER","LAG & running totals","NULLs & edge cases","Mock test 1","Mock test 2"];
+const EX1=[
+ {t:"Most recent transfers",q:"Show the 10 most recent transfers: id, created_at and amount, newest first.",ordered:true,
+  hint:"ORDER BY created_at DESC, then LIMIT.",a:"SELECT id, created_at, amount FROM transfers ORDER BY created_at DESC LIMIT 10;"},
+ {t:"Failed SGD transfers",q:"List every failed transfer sent from SGD. Show id, target_currency, amount and failure_reason.",
+  hint:"Two conditions joined with AND.",a:"SELECT id, target_currency, amount, failure_reason FROM transfers WHERE status = 'FAILED' AND source_currency = 'SGD';"},
+ {t:"Big SGD transfers to USD or EUR",q:"Transfers sent from SGD of S$5,000 or more, going to USD or EUR. Show id, target_currency, amount, largest first.",ordered:true,
+  hint:"Three conditions. Use IN for the target currencies so the AND/OR trap can't bite.",a:"SELECT id, target_currency, amount FROM transfers WHERE source_currency = 'SGD' AND amount >= 5000 AND target_currency IN ('USD','EUR') ORDER BY amount DESC;"},
+ {t:"Currencies we pay out in",q:"Which target currencies appear in the data? One row per currency, alphabetical.",ordered:true,
+  hint:"DISTINCT removes duplicates.",a:"SELECT DISTINCT target_currency FROM transfers ORDER BY target_currency;"},
+ {t:"2025 sign-ups in SG and MY",q:"Customers in Singapore (SG) or Malaysia (MY) who signed up during 2025. Show name, country and signup_date, oldest sign-up first.",ordered:true,
+  hint:"Date range with >= and <, plus country IN (...).",a:"SELECT name, country, signup_date FROM customers WHERE country IN ('SG','MY') AND signup_date >= '2025-01-01' AND signup_date < '2026-01-01' ORDER BY signup_date;"},
+ {t:"Stuck in October",q:"Transfers created in October 2026 that are still not completed and not cancelled. Show id, status and created_at.",
+  hint:"Status is PENDING or FAILED. Either list them with IN, or exclude the other two with NOT IN.",a:"SELECT id, status, created_at FROM transfers WHERE created_at >= '2026-10-01' AND created_at < '2026-11-01' AND status NOT IN ('COMPLETED','CANCELLED');"}
+];
+
+
+const EX2=[
+ {t:"How many transfers?",q:"Count every transfer in the table. One number.",
+  hint:"COUNT(*) with no GROUP BY.",a:"SELECT COUNT(*) FROM transfers;"},
+ {t:"Volume by status",q:"For each status, show the status and how many transfers have it.",
+  hint:"GROUP BY status.",a:"SELECT status, COUNT(*) FROM transfers GROUP BY status;"},
+ {t:"SGD corridors",q:"For transfers sent from SGD, show each target_currency, the number of transfers, and the average amount rounded to 2 decimals. Most transfers first; break ties alphabetically by currency.",ordered:true,
+  hint:"WHERE first, then GROUP BY target_currency. ORDER BY count DESC, target_currency.",a:"SELECT target_currency, COUNT(*) AS n, ROUND(AVG(amount), 2) FROM transfers WHERE source_currency = 'SGD' GROUP BY target_currency ORDER BY n DESC, target_currency;"},
+ {t:"Who sends from where",q:"For each source_currency, how many different customers sent at least one transfer?",
+  hint:"COUNT(DISTINCT customer_id).",a:"SELECT source_currency, COUNT(DISTINCT customer_id) FROM transfers GROUP BY source_currency;"},
+ {t:"Heavy users",q:"Customers with 18 or more transfers. Show customer_id and their transfer count, most first; break ties by customer_id.",ordered:true,
+  hint:"A condition on COUNT(*) belongs in HAVING, not WHERE.",a:"SELECT customer_id, COUNT(*) AS n FROM transfers GROUP BY customer_id HAVING COUNT(*) >= 18 ORDER BY n DESC, customer_id;"},
+ {t:"Monthly SGD fees",q:"For completed transfers sent from SGD in 2026, show each month (as 'YYYY-MM'), the number of transfers, and total fees rounded to 2 decimals. Oldest month first.",ordered:true,
+  hint:"substr(created_at, 1, 7) gives the month. Filter status, currency and date in WHERE.",a:"SELECT substr(created_at, 1, 7) AS month, COUNT(*), ROUND(SUM(fee), 2) FROM transfers WHERE status = 'COMPLETED' AND source_currency = 'SGD' AND created_at >= '2026-01-01' GROUP BY month ORDER BY month;"},
+ {t:"Why transfers fail",q:"Among failed transfers, count how many there are per failure_reason. Most common first; break ties alphabetically.",ordered:true,
+  hint:"WHERE status = 'FAILED', GROUP BY failure_reason.",a:"SELECT failure_reason, COUNT(*) AS n FROM transfers WHERE status = 'FAILED' GROUP BY failure_reason ORDER BY n DESC, failure_reason;"}
+];
+const DAYS={1:EX1,2:EX2};
+
+// deterministic mock data
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function buildSQL(){
+  const r=rng(20261102),pick=a=>a[Math.floor(r()*a.length)],w=(pairs)=>{let s=pairs.reduce((a,p)=>a+p[1],0),x=r()*s;for(const p of pairs){if((x-=p[1])<0)return p[0]}return pairs[0][0]};
+  const first=["Wei","Aisha","Ravi","Mei","Hafiz","Siti","Daniel","Priya","Jun","Nur","Marcus","Ling","Arjun","Farah","Ken","Grace","Hui","Imran","Joy","Leon"];
+  const last=["Tan","Lim","Ng","Lee","Rahman","Kumar","Wong","Goh","Ong","Ismail","Santos","Reyes","Chua","Teo","Halim","Pillai"];
+  let s="CREATE TABLE customers(id INTEGER PRIMARY KEY,name TEXT,country TEXT,segment TEXT,signup_date TEXT);\nCREATE TABLE transfers(id INTEGER PRIMARY KEY,customer_id INTEGER,source_currency TEXT,target_currency TEXT,amount REAL,fee REAL,status TEXT,failure_reason TEXT,created_at TEXT,completed_at TEXT);\n";
+  const pad=n=>String(n).padStart(2,"0"),fmt=d=>`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:00`;
+  const cust=[];
+  for(let i=1;i<=120;i++){
+    const c=w([["SG",55],["MY",18],["ID",10],["PH",9],["AU",8]]);
+    const seg=w([["Personal",75],["Business",25]]);
+    const d=new Date(Date.UTC(2024,0,1)+Math.floor(r()*1000)*86400000);
+    const sd=d.toISOString().slice(0,10);
+    cust.push({id:i,c,seg});
+    s+=`INSERT INTO customers VALUES(${i},'${pick(first)} ${pick(last)}','${c}','${seg}','${sd}');\n`;
+  }
+  const srcBy={SG:"SGD",MY:"MYR",ID:"IDR",PH:"PHP",AU:"AUD"};
+  const reasons=["INSUFFICIENT_FUNDS","BANK_REJECTED","COMPLIANCE_HOLD","INVALID_ACCOUNT","TIMEOUT"];
+  const start=Date.UTC(2025,10,1),span=Date.UTC(2026,10,1)-start;
+  for(let i=1;i<=1500;i++){
+    const cu=cust[Math.floor(r()*cust.length)];
+    const src=r()<.85?srcBy[cu.c]:w([["SGD",50],["USD",35],["GBP",15]]);
+    let tgt=w([["USD",22],["EUR",14],["INR",16],["PHP",12],["MYR",10],["IDR",9],["GBP",8],["JPY",6],["AUD",3]]);
+    if(tgt===src)tgt="USD"===src?"EUR":"USD";
+    const base=cu.seg==="Business"?4000:600;
+    let amt=Math.round(base*Math.exp((r()-.5)*2.2)*100)/100;
+    if(src==="IDR")amt=Math.round(amt*11000);if(src==="PHP")amt=Math.round(amt*42);
+    const fee=Math.round(amt*(.004+r()*.006)*100)/100;
+    const created=new Date(start+Math.floor(r()*span/60000)*60000);
+    const recent=(Date.UTC(2026,10,1)-created)<12*86400000;
+    let st=w([["COMPLETED",84],["FAILED",8],["CANCELLED",5],["PENDING",3]]);
+    if(recent&&r()<.25)st="PENDING";
+    if(!recent&&st==="PENDING")st="COMPLETED";
+    const fr=st==="FAILED"?`'${w([["INSUFFICIENT_FUNDS",30],["BANK_REJECTED",25],["COMPLIANCE_HOLD",15],["INVALID_ACCOUNT",20],["TIMEOUT",10]])}'`:"NULL";
+    const done=st==="COMPLETED"?`'${fmt(new Date(created.getTime()+Math.floor((5+r()*r()*2800))*60000))}'`:"NULL";
+    s+=`INSERT INTO transfers VALUES(${i},${cu.id},'${src}','${tgt}',${amt},${fee},'${st}',${fr},'${fmt(created)}',${done});\n`;
+  }
+  return s;
+}
+
+const TAGS={where:"WHERE filters",andor:"AND / OR and brackets",inlist:"IN / NOT IN",between:"BETWEEN",like:"LIKE patterns",nulls:"NULL checks",dates:"Date ranges",orderby:"ORDER BY and tie-breaks",limit:"LIMIT",distinct:"DISTINCT",count:"COUNT",sumavg:"SUM / AVG / ROUND",countd:"COUNT(DISTINCT)",minmax:"MIN / MAX",groupby:"GROUP BY",having:"HAVING",month:"Grouping by month"};
+const EXTAGS={"1-0":["orderby","limit"],"1-1":["where","andor"],"1-2":["where","inlist","orderby"],"1-3":["distinct","orderby"],"1-4":["inlist","dates","orderby"],"1-5":["dates","inlist"],
+ "2-0":["count"],"2-1":["groupby","count"],"2-2":["groupby","sumavg","orderby","where"],"2-3":["countd","groupby"],"2-4":["having","groupby","orderby"],"2-5":["month","sumavg","dates","groupby"],"2-6":["groupby","where","orderby"]};
+const DRILLS=[
+ {id:"k1",day:1,tags:["where","orderby"],ordered:true,q:"Pending transfers: show id and created_at, oldest first.",hint:"WHERE status = 'PENDING', then ORDER BY created_at.",a:"SELECT id, created_at FROM transfers WHERE status = 'PENDING' ORDER BY created_at;"},
+ {id:"k2",day:1,tags:["between"],q:"Transfers sent from SGD with an amount from 200 to 300 inclusive. Show id and amount.",hint:"amount BETWEEN 200 AND 300 includes both ends.",a:"SELECT id, amount FROM transfers WHERE source_currency = 'SGD' AND amount BETWEEN 200 AND 300;"},
+ {id:"k3",day:1,tags:["like"],q:"Customers whose name starts with 'Nur'. Show id and name.",hint:"LIKE 'Nur%' means Nur followed by anything.",a:"SELECT id, name FROM customers WHERE name LIKE 'Nur%';"},
+ {id:"k4",day:1,tags:["like"],q:"Customers whose surname is Tan (their name ends in 'Tan'). Show id, name and country.",hint:"Put the % in front: LIKE '%Tan'.",a:"SELECT id, name, country FROM customers WHERE name LIKE '%Tan';"},
+ {id:"k5",day:1,tags:["nulls"],q:"Transfers that have a failure_reason recorded. Show id, status and failure_reason.",hint:"IS NOT NULL, never <> NULL.",a:"SELECT id, status, failure_reason FROM transfers WHERE failure_reason IS NOT NULL;"},
+ {id:"k6",day:1,tags:["nulls","dates"],q:"Transfers with no completed_at that were created before 1 Oct 2026. Show id and status.",hint:"completed_at IS NULL AND created_at < '2026-10-01'.",a:"SELECT id, status FROM transfers WHERE completed_at IS NULL AND created_at < '2026-10-01';"},
+ {id:"k7",day:1,tags:["andor"],q:"Failed or cancelled transfers sent from MYR. Show id, status and amount.",hint:"Brackets around the OR, or use IN.",a:"SELECT id, status, amount FROM transfers WHERE source_currency = 'MYR' AND (status = 'FAILED' OR status = 'CANCELLED');"},
+ {id:"k8",day:1,tags:["inlist"],q:"Transfers sent from AUD going to anything except USD, EUR or GBP. Show id and target_currency.",hint:"target_currency NOT IN ('USD','EUR','GBP').",a:"SELECT id, target_currency FROM transfers WHERE source_currency = 'AUD' AND target_currency NOT IN ('USD','EUR','GBP');"},
+ {id:"k9",day:1,tags:["dates"],q:"Transfers created during December 2025. Show id and created_at.",hint:">= '2025-12-01' AND < '2026-01-01'.",a:"SELECT id, created_at FROM transfers WHERE created_at >= '2025-12-01' AND created_at < '2026-01-01';"},
+ {id:"k10",day:1,tags:["distinct","orderby"],ordered:true,q:"Every different source and target currency pair. Sort by source_currency, then target_currency.",hint:"SELECT DISTINCT works on the combination of both columns.",a:"SELECT DISTINCT source_currency, target_currency FROM transfers ORDER BY source_currency, target_currency;"},
+ {id:"k11",day:1,tags:["orderby","limit"],ordered:true,q:"The 5 biggest transfers sent from PHP. Show id and amount, biggest first; break ties by id.",hint:"ORDER BY amount DESC, id, then LIMIT 5.",a:"SELECT id, amount FROM transfers WHERE source_currency = 'PHP' ORDER BY amount DESC, id LIMIT 5;"},
+ {id:"k12",day:1,tags:["where"],q:"Business customers in Australia (AU). Show id and name.",hint:"Two conditions: segment and country.",a:"SELECT id, name FROM customers WHERE segment = 'Business' AND country = 'AU';"},
+ {id:"k13",day:2,tags:["count","where"],q:"How many customers are in Singapore (SG)? One number.",hint:"COUNT(*) with a WHERE.",a:"SELECT COUNT(*) FROM customers WHERE country = 'SG';"},
+ {id:"k14",day:2,tags:["countd","dates"],q:"How many different customers made at least one transfer in October 2026? One number.",hint:"COUNT(DISTINCT customer_id) plus an October date range.",a:"SELECT COUNT(DISTINCT customer_id) FROM transfers WHERE created_at >= '2026-10-01' AND created_at < '2026-11-01';"},
+ {id:"k15",day:2,tags:["minmax"],q:"Among failed transfers, what are the earliest and latest created_at? One row, two columns.",hint:"MIN(created_at), MAX(created_at).",a:"SELECT MIN(created_at), MAX(created_at) FROM transfers WHERE status = 'FAILED';"},
+ {id:"k16",day:2,tags:["sumavg"],q:"For completed transfers sent from SGD: total fees and average fee, both rounded to 2 decimals.",hint:"ROUND(SUM(fee), 2), ROUND(AVG(fee), 2).",a:"SELECT ROUND(SUM(fee), 2), ROUND(AVG(fee), 2) FROM transfers WHERE status = 'COMPLETED' AND source_currency = 'SGD';"},
+ {id:"k17",day:2,tags:["groupby"],q:"Number of customers for each country and segment combination. Show country, segment and the count.",hint:"GROUP BY country, segment.",a:"SELECT country, segment, COUNT(*) FROM customers GROUP BY country, segment;"},
+ {id:"k18",day:2,tags:["having"],q:"Target currencies with fewer than 100 transfers. Show target_currency and the count.",hint:"Condition on COUNT(*) goes in HAVING.",a:"SELECT target_currency, COUNT(*) FROM transfers GROUP BY target_currency HAVING COUNT(*) < 100;"},
+ {id:"k19",day:2,tags:["having","sumavg","orderby"],ordered:true,q:"Among SGD transfers, customers who sent more than S$20,000 in total. Show customer_id and total amount (2 decimals), biggest first; break ties by customer_id.",hint:"WHERE for the currency, GROUP BY customer_id, HAVING SUM(amount) > 20000.",a:"SELECT customer_id, ROUND(SUM(amount), 2) AS total FROM transfers WHERE source_currency = 'SGD' GROUP BY customer_id HAVING SUM(amount) > 20000 ORDER BY total DESC, customer_id;"},
+ {id:"k20",day:2,tags:["month","dates"],ordered:true,q:"Failed transfers per month in 2026. Show the month as 'YYYY-MM' and the count, oldest month first.",hint:"substr(created_at, 1, 7), WHERE status and a 2026 date filter.",a:"SELECT substr(created_at, 1, 7) AS month, COUNT(*) FROM transfers WHERE status = 'FAILED' AND created_at >= '2026-01-01' GROUP BY month ORDER BY month;"},
+ {id:"k21",day:2,tags:["count","nulls","groupby"],q:"For each status, show the status, the total number of transfers, and how many have a failure_reason recorded.",hint:"COUNT(*) counts rows; COUNT(failure_reason) skips NULLs.",a:"SELECT status, COUNT(*), COUNT(failure_reason) FROM transfers GROUP BY status;"},
+ {id:"k22",day:2,tags:["groupby","orderby"],ordered:true,q:"For each source_currency, the number of completed transfers. Most first; break ties alphabetically.",hint:"WHERE status = 'COMPLETED', GROUP BY source_currency.",a:"SELECT source_currency, COUNT(*) AS n FROM transfers WHERE status = 'COMPLETED' GROUP BY source_currency ORDER BY n DESC, source_currency;"}
+];
+
+// ---- adaptive practice engine ----
+let curEx=null,attempt={fails:0,hint:false,shown:false};
+function stats(){return store.get("sqlbc-stats")||{tags:{},items:{},seq:0}}
+function saveStats(st){store.set("sqlbc-stats",st)}
+function tagScore(st,t){const x=st.tags[t]||{r:0,w:0,h:0,s:0};return 1+(x.w+2*x.s+0.5*x.h)/(x.r+1)}
+function seen(st,t){const x=st.tags[t];return x?x.r+x.w+x.s:0}
+function record(ex,ev){ // ev: right | wrong | hint | shown | recovered
+  if(!ex.tags)return;const st=stats();
+  for(const t of ex.tags){const x=st.tags[t]||(st.tags[t]={r:0,w:0,h:0,s:0});
+    if(ev==="right")x.r++;else if(ev==="wrong")x.w++;else if(ev==="hint")x.h++;else if(ev==="shown")x.s++;else if(ev==="recovered")x.r+=0.5}
+  const it=st.items[ex.id]||(st.items[ex.id]={box:0,due:0,tries:0,wrong:0});
+  if(ev==="wrong"){it.box=0;it.wrong++;it.due=st.seq+2}
+  if(ev==="shown"){it.box=0;it.due=st.seq+2}
+  if(ev==="right"){it.box=Math.min(4,it.box+1);it.tries++}
+  if(ev==="recovered"){it.box=Math.min(it.box,1);it.tries++}
+  saveStats(st);
+}
+function pool(){
+  const maxDay=Math.max(...Object.keys(DAYS).map(Number).filter(d=>d<=day||doneDays.has(d)||d===1));
+  const items=[];
+  for(const [d,list] of Object.entries(DAYS))if(+d<=maxDay)list.forEach((e,i)=>items.push({...e,id:"L"+d+"-"+i,tags:EXTAGS[d+"-"+i],src:"Day "+d+" exercise "+(i+1)}));
+  DRILLS.filter(x=>x.day<=maxDay).forEach(x=>items.push({...x,t:"Practice",src:"Extra practice"}));
+  return items;
+}
+function nextQuestion(){
+  const st=stats(),items=pool(),recent=st.recent||[];
+  let best=[],total=0;
+  for(const it of items){
+    const rec=st.items[it.id]||{box:0,due:-1,tries:0,wrong:0};
+    let w=Math.pow(5-rec.box,2)*Math.max(...it.tags.map(t=>tagScore(st,t)));
+    if(rec.due>=0&&rec.due<=st.seq&&rec.box===0&&rec.wrong+0>0)w*=4;
+    if(rec.tries===0&&!rec.wrong)w*=1.5;
+    if(recent.includes(it.id))w*=0.02;
+    best.push([it,w]);total+=w;
+  }
+  let x=Math.random()*total;for(const [it,w] of best){if((x-=w)<0)return it}return best[0][0];
+}
+function weakList(){
+  const st=stats(),maxTags=new Set(pool().flatMap(i=>i.tags));
+  return [...maxTags].map(t=>({t,label:TAGS[t],score:tagScore(st,t),n:seen(st,t),x:st.tags[t]||{r:0,w:0,h:0,s:0}})).sort((a,b)=>b.score-a.score||a.n-b.n);
+}
+function showPractice(){
+  day=0;curEx=null;
+  const wl=weakList(),max=Math.max(2,...wl.map(w=>w.score));
+  const st=stats(),missed=Object.values(st.items).filter(i=>i.box===0&&i.wrong>0).length;
+  $("lessonBody").innerHTML=`
+   <div class="eyebrow">Adaptive practice</div>
+   <h2>Weak spots</h2>
+   <p>Every time you check an answer, the page notes which skills the question tests and whether you got it right first time, needed a hint, saw the answer, or got it wrong. Questions on your weakest skills come up more often, and anything you get wrong comes back again a couple of questions later until you get it right on the first try.</p>
+   <div class="ex"><div class="ex-head"><span class="ex-title">Your skills, weakest first <span class="target">(longer bar = needs more work)</span></span><span class="pill ${missed?"bad":""}">${missed} question${missed===1?"":"s"} to redo</span></div>
+   <div class="skills">${wl.map(w=>{const pct=Math.round((w.score-1)/(max-1)*100);const lvl=w.n===0?"new":w.score>=2?"weak":w.score>=1.4?"shaky":"solid";
+     return `<div class="skill"><span>${w.label}</span><span class="bar"><span style="width:${w.n?Math.max(4,pct):0}%" class="${lvl}"></span></span><span class="pill ${lvl==="weak"?"bad":lvl==="solid"?"ok":""}">${lvl==="new"?"Not tried":lvl==="weak"?"Needs work":lvl==="shaky"?"Shaky":"Solid"}</span></div>`}).join("")}</div>
+   <div class="target">${wl.filter(w=>w.n).length?"":"Nothing recorded yet. Your Day 1 and Day 2 checks from before this update weren't tracked, so the first few questions are a mix."}</div></div>
+   <div class="ex" id="pq"><div class="ex-head"><span class="ex-title">Ready when you are</span></div><div>Questions are drawn from the lesson exercises plus ${DRILLS.length} extra practice questions, for the days you've reached.</div><div class="btns"><button class="primary" id="nextQ">Start practice</button></div></div>
+   <p class="note">Getting a question right first time, without a hint, is what moves a skill toward Solid. A hint counts a little against it, and showing the answer counts as a miss.</p>`;
+  renderDays();$("finish").innerHTML="";
+  $("target").textContent="Free practice: try anything.";$("out").innerHTML="";
+  try{location.hash="practice"}catch(e){}
+  window.scrollTo({top:0});
+}
+function loadQuestion(){
+  const q=nextQuestion();const st=stats();st.seq=(st.seq||0)+1;st.recent=[q.id,...(st.recent||[])].slice(0,3);saveStats(st);
+  curEx=q;attempt={fails:itemRec(q.id).cur||0,hint:false,shown:false,resumed:!!itemRec(q.id).cur};
+  const rec=st.items[q.id];const again=rec&&rec.wrong&&rec.box===0;
+  $("pq").innerHTML=`<div class="ex-head"><span class="ex-title">${again?"Try this one again":"Practice question"}</span><span class="pill">${q.tags.map(t=>TAGS[t]).join(" · ")}</span></div>
+   <div>${q.q}${q.ordered?" <span class='target'>(order matters)</span>":""}</div>
+   <div class="target">From: ${q.src}${(()=>{const it=itemRec(q.id);return it.best?` · your best: solved in ${it.best} ${it.best===1?"try":"tries"}`:it.cur?` · ${it.cur} ${it.cur===1?"try":"tries"} so far`:""})()}</div>
+   <div class="btns"><button data-phint="1">Hint</button><button data-pans="1">Show answer</button><button id="nextQ">Skip / next question</button></div>
+   <div class="reveal" id="prv" hidden></div>`;
+  $("target").innerHTML=`<b>Practice:</b> ${q.q}`;guide([]);if(attempt.resumed)setTimeout(()=>msg(`You've had ${attempt.fails} ${attempt.fails===1?"try":"tries"} at this one before. Help picks up where you left off.`,"info"));$("sql").value="";$("sql").focus();$("out").innerHTML="";msg("Write your query, then Check.","info");
+}
+
+// ---- step-by-step answer explanations ----
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const C=s=>`<code>${esc(s)}</code>`;
+function splitTop(str,sep){const out=[];let d=0,q=false,cur="";for(let i=0;i<str.length;i++){const ch=str[i];if(ch==="'")q=!q;if(!q){if(ch==="(")d++;if(ch===")")d--}
+  if(!q&&d===0&&str.slice(i).match(sep)?.index===0){const m=str.slice(i).match(sep)[0];out.push(cur);cur="";i+=m.length-1;continue}cur+=ch}out.push(cur);return out.map(x=>x.trim()).filter(Boolean)}
+function clauses(sql){
+  const s=sql.replace(/;\s*$/,"").replace(/\s+/g," ").trim();
+  const keys=["SELECT DISTINCT","SELECT","FROM","WHERE","GROUP BY","HAVING","ORDER BY","LIMIT"];
+  const re=/\b(SELECT DISTINCT|SELECT|FROM|WHERE|GROUP BY|HAVING|ORDER BY|LIMIT)\b/gi;const parts={};let m,last=null,lastIdx=0;const marks=[];
+  while((m=re.exec(s))){marks.push([m[1].toUpperCase(),m.index,m.index+m[0].length])}
+  marks.forEach((mk,i)=>{const end=i+1<marks.length?marks[i+1][1]:s.length;parts[mk[0]]=s.slice(mk[2],end).trim()});
+  return parts;
+}
+function explainExpr(e){
+  let x=e.trim(),m;
+  const alias=x.match(/^(.*)\s+AS\s+(\w+)$/i);let tail="";if(alias){x=alias[1].trim();tail=`, named ${C(alias[2])}`}
+  if(/^COUNT\(\*\)$/i.test(x))return `${C(x)} counts the rows${tail}`;
+  if((m=x.match(/^COUNT\(DISTINCT (\w+)\)$/i)))return `${C(x)} counts how many different ${m[1]} values there are${tail}`;
+  if((m=x.match(/^COUNT\((\w+)\)$/i)))return `${C(x)} counts rows where ${m[1]} is not NULL${tail}`;
+  if((m=x.match(/^ROUND\((SUM|AVG|MIN|MAX)\((\w+)\), ?(\d+)\)$/i)))return `${C(x)} takes the ${({SUM:"total",AVG:"average",MIN:"smallest",MAX:"largest"})[m[1].toUpperCase()]} of ${m[2]}, rounded to ${m[3]} decimal places${tail}`;
+  if((m=x.match(/^(SUM|AVG|MIN|MAX)\((\w+)\)$/i)))return `${C(x)} takes the ${({SUM:"total",AVG:"average",MIN:"smallest (earliest, for dates)",MAX:"largest (latest, for dates)"})[m[1].toUpperCase()]} of ${m[2]}${tail}`;
+  if((m=x.match(/^substr\((\w+), ?1, ?7\)$/i)))return `${C(x)} cuts ${m[1]} down to its first 7 characters, the month as 'YYYY-MM'${tail}`;
+  if(x==="*")return "every column";
+  return `${C(x)}${tail}`;
+}
+function explainCond(c){
+  let m;c=c.trim();
+  if(/^\(.*\)$/.test(c)){const inner=c.slice(1,-1);const ors=splitTop(inner,/^\s+OR\s+/i);if(ors.length>1)return `either ${ors.map(explainCond).join(", or ")}. The brackets make the OR happen before the ANDs around it`}
+  if((m=c.match(/^(\w+) NOT IN \((.*)\)$/i)))return `${C(m[1])} is anything except ${m[2]}`;
+  if((m=c.match(/^(\w+) IN \((.*)\)$/i)))return `${C(m[1])} is one of ${m[2]}`;
+  if((m=c.match(/^(\w+) BETWEEN (\S+) AND (\S+)$/i)))return `${C(m[1])} is from ${m[2]} to ${m[3]}, including both ends`;
+  if((m=c.match(/^(\w+) LIKE '(.*)'$/i))){const p=m[2];const d=p.startsWith("%")&&p.endsWith("%")?`contains "${p.slice(1,-1)}" anywhere`:p.endsWith("%")?`starts with "${p.slice(0,-1)}"`:p.startsWith("%")?`ends with "${p.slice(1)}"`:`is exactly "${p}"`;return `${C(m[1])} ${d} (% means "any characters")`}
+  if((m=c.match(/^(\w+) IS NOT NULL$/i)))return `${C(m[1])} has a value (IS NOT NULL)`;
+  if((m=c.match(/^(\w+) IS NULL$/i)))return `${C(m[1])} is empty (IS NULL; ${C("= NULL")} would never match)`;
+  if((m=c.match(/^(\w+(?:\([^)]*\))?) (>=|<=|<>|!=|=|>|<) (.+)$/i))){const [_,col,op,val]=m;const isDate=/^'\d{4}-\d{2}/.test(val);
+    const word=isDate?({">=":"is on or after","<":"is before",">":"is after","<=":"is on or before","=":"is exactly"})[op]:({">=":"is at least",">":"is more than","<":"is less than","<=":"is at most","=":"equals","<>":"is not","!=":"is not"})[op];
+    return `${C(col)} ${word} ${esc(val)}`}
+  return C(c);
+}
+function explain(sql){
+  const p=clauses(sql),steps=[];const grouped=!!p["GROUP BY"];const sel=p["SELECT DISTINCT"]??p["SELECT"];
+  const agg=/\b(COUNT|SUM|AVG|MIN|MAX)\s*\(/i.test(sel||"");
+  steps.push(`<b>FROM ${esc(p.FROM)}</b>: start with every row in the ${C(p.FROM)} table.`);
+  if(p.WHERE){const conds=splitTop(p.WHERE,/^\s+AND\s+/i).reduce((a,c)=>{if(a.length&&/BETWEEN \S+$/i.test(a[a.length-1]))a[a.length-1]+=" AND "+c;else a.push(c);return a},[]);
+    steps.push(`<b>WHERE</b>: throw away rows that don't match. A row stays only if ${conds.length>1?"<i>all</i> of these are true":"this is true"}:<ul>${conds.map(c=>`<li>${explainCond(c)}</li>`).join("")}</ul>`)}
+  if(grouped)steps.push(`<b>GROUP BY ${esc(p["GROUP BY"])}</b>: sort the remaining rows into piles, one pile per different ${C(p["GROUP BY"])}${/,/.test(p["GROUP BY"])?" combination":""}. Each pile becomes one row in the result.`);
+  else if(agg)steps.push(`<b>No GROUP BY</b>: so the aggregate squashes all remaining rows into a single result row.`);
+  if(p.HAVING)steps.push(`<b>HAVING</b>: now throw away whole piles. Keep a pile only if ${splitTop(p.HAVING,/^\s+AND\s+/i).map(explainCond).join(" and ")}. This can't go in WHERE because the counts and totals don't exist until after grouping.`);
+  const items=splitTop(sel,/^\s*,\s*/);
+  steps.push(`<b>SELECT${p["SELECT DISTINCT"]!==undefined?" DISTINCT":""}</b>: choose what to show${grouped?" for each pile":""}:<ul>${items.map(i=>`<li>${explainExpr(i)}</li>`).join("")}</ul>${p["SELECT DISTINCT"]!==undefined?"DISTINCT then removes duplicate rows, so each value (or combination) appears once.":""}`);
+  if(p["ORDER BY"]){const ob=splitTop(p["ORDER BY"],/^\s*,\s*/);
+    steps.push(`<b>ORDER BY</b>: sort the result${ob.length>1?". The first column decides the order, and each later one only breaks ties in the one before":""}:<ul>${ob.map(o=>{const d=/\sDESC$/i.test(o);const col=o.replace(/\s+(ASC|DESC)$/i,"");return `<li>${C(col)}, ${d?"largest / latest / Z first (DESC)":"smallest / earliest / A first"}</li>`}).join("")}</ul>`)}
+  if(p.LIMIT)steps.push(`<b>LIMIT ${esc(p.LIMIT)}</b>: keep only the first ${esc(p.LIMIT)} rows after sorting.`);
+  return `<pre class="ans">${esc(sql)}</pre>${window._sample?`<button class="askbtn" data-ask="Why is the model answer written this way? Explain each part and why it is needed.">Still unsure? Ask Claude why</button>`:""}<div class="steps-h">How it works, in the order the database runs it</div><ol class="steps">${steps.map(s=>`<li>${s}</li>`).join("")}</ol>`;
+}
+
+// ---- check guidance ----
+const READONLY=/^\s*(insert|update|delete|drop|alter|create|replace|attach|pragma)\b/im;
+function literals(sql){return [...sql.matchAll(/'([^']*)'/g)].map(m=>m[1])}
+function lint(sql,ex){
+  const out=[];
+  if(/"[^"]*"/.test(sql.replace(/AS\s+"[^"]*"/gi,"")))out.push(`You used double quotes, like ${C('"SGD"')}. For text values use single quotes: ${C("'SGD'")}. In PostgreSQL, double quotes mean a column name, so this would error in the interview. This page lets it slide.`);
+  if(/=\s*null\b/i.test(sql))out.push(`${C("= NULL")} never matches anything. Use ${C("IS NULL")} or ${C("IS NOT NULL")}.`);
+  const p=clauses(sql);if(p.WHERE&&/\b(COUNT|SUM|AVG|MIN|MAX)\s*\(/i.test(p.WHERE))out.push(`There's an aggregate like COUNT or SUM in WHERE. WHERE runs before grouping, so those values don't exist yet. Move that condition to HAVING.`);
+  if(ex.ordered&&!/order\s+by/i.test(sql))out.push(`This question cares about order, and your query has no ORDER BY.`);
+  if(/\b(most|largest|biggest|newest|latest)\b[^.]*\bfirst\b/i.test(ex.q)&&/order\s+by/i.test(sql)&&!/\bdesc\b/i.test(sql))out.push(`The question says "${(ex.q.match(/\b(most|largest|biggest|newest|latest)\b[^.;]*first/i)||[""])[0]}". That needs ${C("DESC")}; without it, ORDER BY sorts smallest first.`);
+  return out;
+}
+function clauseHints(mine,ans){
+  const out=[],pm=clauses(mine),pa=clauses(ans);
+  for(const k of ["WHERE","GROUP BY","HAVING","ORDER BY","LIMIT"]){if(pa[k]&&!pm[k])out.push(`The answer uses ${C(k)} and your query doesn't.`);if(!pa[k]&&pm[k])out.push(`Your query has ${C(k)}, which this question doesn't need.`)}
+  if(pa["SELECT DISTINCT"]!==undefined&&pm["SELECT DISTINCT"]===undefined)out.push(`Think about whether you need ${C("DISTINCT")}.`);
+  const la=literals(ans).map(x=>x.toUpperCase()),lm=literals(mine).map(x=>x.toUpperCase());
+  const missing=[...new Set(la.filter(x=>!lm.includes(x)))],extra=[...new Set(lm.filter(x=>!la.includes(x)))];
+  if(missing.length)out.push(`The answer filters on ${missing.map(x=>C("'"+x+"'")).join(", ")}, which your query never mentions.`);
+  if(extra.length)out.push(`Your query mentions ${extra.map(x=>C("'"+x+"'")).join(", ")}, which the answer doesn't use. Check that filter.`);
+  return out;
+}
+function revealClauses(ans,k){
+  const s=ans.replace(/\s+/g," ").replace(/;\s*$/,"");const re=/\b(FROM|WHERE|GROUP BY|HAVING|ORDER BY|LIMIT)\b/g;const idx=[0];let m;while((m=re.exec(s)))idx.push(m.index);idx.push(s.length);
+  const parts=[];for(let i=0;i<idx.length-1;i++)parts.push(s.slice(idx[i],idx[i+1]).trim());
+  return {shown:parts.slice(0,k),total:parts.length,left:parts.length-k};
+}
+function previewRows(exp,n){if(!exp.length)return "";const {columns,values}=exp[0];return `<div class="out"><table><tr>${columns.map(c=>`<th>${esc(c)}</th>`).join("")}</tr>${values.slice(0,n).map(r=>`<tr>${r.map(v=>`<td>${v===null?"NULL":esc(v)}</td>`).join("")}</tr>`).join("")}</table></div>`}
+function focusOn(why,items,sql,e){
+  const pa=clauses(e.a),pm=clauses(sql);
+  if(/column/.test(why)&&/returned/.test(why))return `the ${C("SELECT")} line. Which columns does the question ask for, and in what order?`;
+  if(/wrong order/.test(why))return `the ${C("ORDER BY")} line. What should come first, and what breaks ties?`;
+  if(/no rows at all/.test(why))return `the values in your ${C("WHERE")}. Check spelling, capitals and quotes on each one.`;
+  if(/rows; the answer/.test(why)){
+    if(pa["GROUP BY"]&&!/^[\d,\s]+$/.test(pm["GROUP BY"]||"")&&(pm["GROUP BY"]||"").replace(/\s/g,"").toLowerCase()!==pa["GROUP BY"].replace(/\s/g,"").toLowerCase())return `${C("GROUP BY")}. Say what one row of the answer represents ("one row per ___"); that's what you group by.`;
+    if(pa.HAVING&&!pm.HAVING)return `filtering the groups. A condition on a count or total goes in ${C("HAVING")}.`;
+    if(pa.LIMIT&&!pm.LIMIT)return `how many rows the question wants. Does it say "top" or a number?`;
+    return `the ${C("WHERE")} line. Go through the question word by word and check each condition is there, and nothing extra.`;
+  }
+  if(/values differ/.test(why))return `how each column is calculated in ${C("SELECT")} (the right function? rounded?), and whether your ${C("WHERE")} matches the question exactly.`;
+  return "the part of the question your result doesn't match yet.";
+}
+function guide(items,kind){try{renderFaq()}catch(e){}lastCheck={sql:$("sql").value,feedback:items.map(i=>String(i).replace(/<[^>]+>/g," ").replace(/\s+/g," ")).join("\n")};const g=$("guide");if(!items.length){g.hidden=true;g.innerHTML="";return}g.hidden=false;g.className="guide "+(kind||"");g.innerHTML=items.map(i=>`<div class="gi">${i}</div>`).join("")}
+function itemRec(id){const st=stats();return st.items[id]||{}}
+function bumpAttempts(ex){if(!ex.id)return 0;const st=stats();const it=st.items[ex.id]||(st.items[ex.id]={box:0,due:0,tries:0,wrong:0});it.attempts=(it.attempts||0)+1;it.cur=(it.cur||0)+1;saveStats(st);return it.cur}
+function markSolved(ex){const st=stats();const it=st.items[ex.id]||(st.items[ex.id]={box:0,due:0,tries:0,wrong:0});it.solvedIn=it.cur||1;it.best=Math.min(it.best||99,it.solvedIn);it.solves=(it.solves||0)+1;it.cur=0;saveStats(st);return it}
+function triesPill(id,passedNow){const it=itemRec(id);if(passedNow||it.solvedIn)return it.solvedIn?`<span class="pill ok">Solved in ${it.solvedIn} ${it.solvedIn===1?"try":"tries"}</span>`:`<span class="pill ok">Passed</span>`;if(it.cur)return `<span class="pill bad">${it.cur} ${it.cur===1?"try":"tries"} so far</span>`;return `<span class="pill">Not done</span>`}
+
+// ---- offline help: plans, deeper diagnostics, comparisons, FAQ ----
+function planFor(sql){
+  const p=clauses(sql),out=[];const sel=p["SELECT DISTINCT"]??p["SELECT"];
+  out.push(`<b>Which table?</b> ${C(p.FROM)}.`);
+  if(p.WHERE){const conds=splitTop(p.WHERE,/^\s+AND\s+/i).reduce((a,c)=>{if(a.length&&/BETWEEN \S+$/i.test(a[a.length-1]))a[a.length-1]+=" AND "+c;else a.push(c);return a},[]);
+    out.push(`<b>Which rows do you keep?</b> ${conds.length} condition${conds.length>1?"s, all true at once":""}:<ul>${conds.map(c=>`<li>${explainCond(c)}</li>`).join("")}</ul>`)}
+  else out.push(`<b>Which rows do you keep?</b> All of them. No WHERE needed.`);
+  if(p["GROUP BY"])out.push(`<b>What does one row of the result stand for?</b> One row per ${C(p["GROUP BY"])}. That's your GROUP BY.`);
+  else if(/\b(COUNT|SUM|AVG|MIN|MAX)\s*\(/i.test(sel))out.push(`<b>What does one row of the result stand for?</b> The whole filtered table squashed into a single row. No GROUP BY.`);
+  if(p.HAVING)out.push(`<b>Which groups do you keep?</b> Only those where ${splitTop(p.HAVING,/^\s+AND\s+/i).map(explainCond).join(" and ")}. That's a condition on a group, so it's HAVING.`);
+  const items=splitTop(sel,/^\s*,\s*/);
+  out.push(`<b>What do you show?</b> ${items.length} column${items.length>1?"s":""}, in this order:<ul>${items.map(i=>`<li>${explainExpr(i)}</li>`).join("")}</ul>${p["SELECT DISTINCT"]!==undefined?"Each value only once, so DISTINCT.":""}`);
+  if(p["ORDER BY"])out.push(`<b>How is it sorted?</b> ${splitTop(p["ORDER BY"],/^\s*,\s*/).map(o=>`${C(o.replace(/\s+(ASC|DESC)$/i,""))} ${/\sDESC$/i.test(o)?"high to low":"low to high"}`).join(", then ")}.`);
+  if(p.LIMIT)out.push(`<b>How many rows?</b> Only the first ${esc(p.LIMIT)}.`);
+  return `<ol class="steps">${out.map(s=>`<li>${s}</li>`).join("")}</ol>`;
+}
+function aggOf(expr){const m=String(expr).match(/\b(COUNT\s*\(\s*DISTINCT|COUNT|SUM|AVG|MIN|MAX)\b/i);return m?m[1].replace(/\s+/g," ").toUpperCase().replace("COUNT (","COUNT(").replace(/COUNT\(\s*DISTINCT/,"COUNT(DISTINCT"):null}
+function selectItems(sql){const p=clauses(sql);return splitTop(p["SELECT DISTINCT"]??p["SELECT"]??"",/^\s*,\s*/)}
+const KNOWN={status:null,source_currency:null,target_currency:null,country:null,segment:null,failure_reason:null};
+function knownValues(col){if(!(col in KNOWN))return null;if(!KNOWN[col]){try{KNOWN[col]=db.exec(`SELECT DISTINCT ${col} FROM ${["country","segment"].includes(col)?"customers":"transfers"} WHERE ${col} IS NOT NULL`)[0].values.map(r=>r[0])}catch(e){KNOWN[col]=[]}}return KNOWN[col]}
+function deepLint(sql,ex){
+  const out=[],p=clauses(sql);
+  // literal values that don't exist
+  const re=/(\w+)\s*(?:=|<>|!=|\bNOT IN\b|\bIN\b)\s*\(?\s*((?:'[^']*'\s*,?\s*)+)\)?/gi;let m;
+  while((m=re.exec(sql))){const col=m[1].toLowerCase(),vals=knownValues(col);if(!vals)continue;
+    for(const v of [...m[2].matchAll(/'([^']*)'/g)].map(x=>x[1])){if(vals.includes(v))continue;
+      const ci=vals.find(x=>x.toLowerCase()===v.toLowerCase());
+      out.push(ci?`Text matching is exact, including capitals. ${C(col)} has ${C("'"+ci+"'")}, not ${C("'"+v+"'")}.`:`No row has ${C("'"+v+"'")} in ${C(col)}. The values that exist are: ${vals.slice(0,12).map(x=>C("'"+x+"'")).join(", ")}.`)}}
+  if(p.WHERE&&/\bOR\b/i.test(p.WHERE)&&/\bAND\b/i.test(p.WHERE.replace(/BETWEEN \S+ AND/gi,""))&&!/\(/.test(p.WHERE))out.push(`Your WHERE mixes AND with OR and has no brackets. AND is worked out first, so this probably doesn't mean what you think. Put brackets around the OR part, or use IN.`);
+  if(/<=\s*'\d{4}-\d{2}-\d{2}'/.test(sql))out.push(`${C("<= '2026-10-31'")} style date limits miss anything after midnight on that last day. Use ${C("<")} the first day of the next period instead.`);
+  if(/\bLIKE\s+'[^%']*'/i.test(sql))out.push(`Your LIKE pattern has no ${C("%")}, so it only matches the exact text. Add % where "anything" can go.`);
+  if(/\bSUM\s*\(\s*amount\s*\)/i.test(sql)&&!/source_currency/i.test(sql))out.push(`You're adding up ${C("amount")} without fixing the source currency. That mixes SGD with IDR and other currencies. Filter or group by ${C("source_currency")}.`);
+  if(p["GROUP BY"]){const g=p["GROUP BY"].toLowerCase().replace(/\s/g,"");const gs=g.split(",");const sel=selectItems(sql);
+    sel.forEach((it,i)=>{const bare=it.replace(/\s+AS\s+.*$/i,"").trim();if(aggOf(bare))return;const alias=(it.match(/\s+AS\s+(\w+)$/i)||[])[1];
+      const ok=gs.includes(bare.toLowerCase().replace(/\s/g,""))||gs.includes(String(i+1))||(alias&&gs.includes(alias.toLowerCase()));
+      if(!ok&&bare!=="*")out.push(`${C(bare)} is in SELECT but isn't in GROUP BY or inside COUNT/SUM/AVG. That breaks the golden rule: PostgreSQL would error, and SQLite quietly shows a random value from each group.`)})}
+  if(p.HAVING){const aliases=selectItems(sql).map(i=>(i.match(/\s+AS\s+(\w+)$/i)||[])[1]).filter(Boolean);for(const a of aliases)if(new RegExp("\\b"+a+"\\b","i").test(p.HAVING))out.push(`HAVING uses the alias ${C(a)}. SQLite allows it, but PostgreSQL doesn't, because HAVING runs before SELECT names things. Repeat the expression instead, e.g. ${C("HAVING COUNT(*) >= 18")}.`)}
+  if(/\bLIMIT\b/i.test(sql)&&!/\bORDER\s+BY\b/i.test(sql))out.push(`LIMIT without ORDER BY gives you an unpredictable set of rows. If you want the "top" of something, sort first.`);
+  return out;
+}
+function columnDiagnosis(mine,ans,badCols){
+  const out=[],mi=selectItems(mine),ai=selectItems(ans);
+  for(const c of badCols){const a=aggOf(ai[c]||""),m=aggOf(mi[c]||"");
+    if(a&&m&&a!==m){const tip={"COUNT(DISTINCT":"counts different values, so repeats only count once",COUNT:"counts rows",SUM:"adds values up",AVG:"takes the average",MIN:"takes the smallest",MAX:"takes the largest"};
+      out.push(`Column ${c+1}: you used ${C(m.replace("COUNT(DISTINCT","COUNT(DISTINCT …)"))} but this needs ${C(a.replace("COUNT(DISTINCT","COUNT(DISTINCT …)"))}, which ${tip[a]}.`)}
+    else if(a&&!m)out.push(`Column ${c+1} needs a calculation (like ${C(a.replace("COUNT(DISTINCT","COUNT(DISTINCT …)"))}), and yours is a plain column.`);
+    else if(!a&&m)out.push(`Column ${c+1} should be a plain column, not a calculation.`);
+    else if(/ROUND/i.test(ai[c]||"")&&!/ROUND/i.test(mi[c]||""))out.push(`Column ${c+1} should be rounded with ${C("ROUND(…, 2)")}.`);
+  }
+  return out;
+}
+function compareTable(mine,ans){
+  if(!mine.trim())return "";
+  const pm=clauses(mine),pa=clauses(ans),keys=["SELECT","FROM","WHERE","GROUP BY","HAVING","ORDER BY","LIMIT"];
+  const norm=s=>(s||"").toLowerCase().replace(/\s+/g," ").replace(/"/g,"'").replace(/\s*([,()=<>])\s*/g,"$1").trim();
+  const rows=keys.map(k=>{const a=k==="SELECT"?(pa["SELECT DISTINCT"]!==undefined?"DISTINCT "+pa["SELECT DISTINCT"]:pa.SELECT):pa[k];const m=k==="SELECT"?(pm["SELECT DISTINCT"]!==undefined?"DISTINCT "+pm["SELECT DISTINCT"]:pm.SELECT):pm[k];
+    if(!a&&!m)return "";const same=norm(a)===norm(m);const note=!m?"missing in yours":!a?"not needed":same?"same":"different";
+    return `<tr class="${note==="same"?"same":"diff"}"><td><b>${k}</b></td><td>${m?C(m):"(none)"}</td><td>${a?C(a):"(none)"}</td><td>${note}</td></tr>`}).join("");
+  return `<div class="steps-h">Your query vs the model answer</div><div class="tablewrap"><table class="ref cmp"><tr><th>Part</th><th>Yours</th><th>Answer</th><th></th></tr>${rows}</table></div><div class="target">"Different" doesn't always mean wrong. If your result passed, both are fine. Look at the differences to learn another way to write it.</div>`;
+}
+const FAQ=[
+ {tags:["where","having"],q:"When do I use WHERE and when HAVING?",a:"WHERE filters single rows before grouping. HAVING filters whole groups after grouping. If the condition is about a COUNT, SUM or AVG, it needs HAVING, because those numbers only exist after GROUP BY. Everything else goes in WHERE, which is also faster."},
+ {tags:["where","andor","inlist"],q:"Why single quotes around text?",a:"Single quotes mark a value: 'FAILED'. Without quotes, SQL thinks FAILED is a column name. Double quotes mean a column name in PostgreSQL, so \"SGD\" will break in a real interview even though this page allows it. Numbers never need quotes."},
+ {tags:["andor"],q:"Why do I need brackets with AND and OR?",a:"AND is worked out before OR, like × before + in maths. a AND b OR c means (a AND b) OR c. If you mean a AND (b OR c), write the brackets. When in doubt, add them, or use IN for 'one of these values'."},
+ {tags:["groupby"],q:"What goes in GROUP BY?",a:"Ask: what does one row of my answer stand for? 'One row per currency' means GROUP BY the currency column. Every column in SELECT that isn't inside COUNT, SUM, AVG, MIN or MAX must be in GROUP BY."},
+ {tags:["groupby","count"],q:"Why do I get one row per transfer instead of one per group?",a:"You grouped by something that's different on almost every row, like id or the full created_at timestamp. Group by the thing you're summarising by, like status, currency or month."},
+ {tags:["count","countd"],q:"COUNT(*) vs COUNT(column) vs COUNT(DISTINCT column)?",a:"COUNT(*) counts rows. COUNT(column) counts rows where that column isn't NULL. COUNT(DISTINCT column) counts different values, so a customer with 10 transfers counts once. 'How many customers' almost always means COUNT(DISTINCT customer_id)."},
+ {tags:["orderby"],q:"Why do some questions say 'break ties'?",a:"If two rows have the same count, the database can show them in any order, so the checker can't know which you meant. A second ORDER BY column, like ORDER BY n DESC, target_currency, fixes the order. Interviewers like seeing this too."},
+ {tags:["orderby","limit"],q:"Why can I use an alias in ORDER BY but not in WHERE?",a:"The database runs the parts in this order: FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY, LIMIT. An alias is created in SELECT, so WHERE (earlier) can't see it, and ORDER BY (later) can."},
+ {tags:["nulls"],q:"Why doesn't = NULL work?",a:"NULL means 'unknown', and 'is unknown equal to unknown?' has no answer, so = NULL is never true. Use IS NULL or IS NOT NULL. Also, COUNT(column) and AVG(column) skip NULLs."},
+ {tags:["dates","month"],q:"How do I filter a whole month?",a:"Use >= the first day and < the first day of the next month: created_at >= '2026-10-01' AND created_at < '2026-11-01'. Using <= '2026-10-31' misses anything after midnight on the 31st, because '2026-10-31 18:00:00' sorts after '2026-10-31'."},
+ {tags:["month"],q:"What does substr(created_at, 1, 7) do?",a:"It takes 7 characters starting at character 1: '2026-10-15 14:03:00' becomes '2026-10'. Every transfer in that month gets the same value, so GROUP BY puts them together. In PostgreSQL you'd use DATE_TRUNC('month', created_at)."},
+ {tags:["distinct"],q:"DISTINCT or GROUP BY?",a:"To list the different values, both work: SELECT DISTINCT status and SELECT status ... GROUP BY status give the same rows. Use DISTINCT for a plain list, and GROUP BY when you also want a COUNT or SUM per value."},
+ {tags:["sumavg"],q:"Why is my total meaningless when I SUM amount?",a:"amount is in the source currency. Adding SGD to IDR is like adding apples to grains of rice. Filter to one source_currency, or GROUP BY source_currency so each total stays separate."},
+ {tags:["sumavg"],q:"Do I need ROUND?",a:"Averages come out with many decimals. ROUND(AVG(amount), 2) rounds to 2 places. Read it from the inside out: average first, then round. The checker compares to 2 decimals, but rounding is good practice when presenting money."},
+ {tags:["like"],q:"How do LIKE patterns work?",a:"% means 'any characters, or none'. 'Tan%' starts with Tan, '%Tan' ends with Tan, '%Tan%' has Tan anywhere. Without any %, LIKE only matches the exact text. In SQLite LIKE ignores capitals; in PostgreSQL it doesn't (use ILIKE there)."},
+ {tags:["between"],q:"Does BETWEEN include the ends?",a:"Yes. amount BETWEEN 100 AND 500 includes 100 and 500. It's the same as amount >= 100 AND amount <= 500. Avoid it for dates with times, for the same reason as the month question."},
+ {tags:["*"],q:"I have the right number of rows but the check still fails.",a:"Check three things: are your columns in the same order as the question lists them; is each column calculated the same way (COUNT vs COUNT DISTINCT, SUM vs AVG); and, if order matters, does your ORDER BY match the question, including the tie-break."},
+ {tags:["*"],q:"I have too many or too few rows.",a:"Too many usually means a missing filter, a missing HAVING, a GROUP BY that splits too finely, or a missing LIMIT. Too few means a filter is too strict: check spelling and capitals of text values, and your date boundaries."}
+];
+function renderFaq(){
+  const box=$("faqlist");if(!box)return;const tags=new Set(curEx?.tags||[]);const q=($("faqq").value||"").toLowerCase().trim();
+  let list=FAQ.map(f=>({f,rel:f.tags.includes("*")?0.5:f.tags.filter(t=>tags.has(t)).length}));
+  if(q)list=list.filter(x=>(x.f.q+" "+x.f.a).toLowerCase().includes(q));else if(tags.size)list=list.filter(x=>x.rel>0);
+  list.sort((a,b)=>b.rel-a.rel);
+  $("faqhead").textContent=q?`Matching "${q}"`:tags.size?"Relevant to this question":"Common questions";
+  box.innerHTML=list.length?list.slice(0,8).map(x=>`<details><summary>${esc(x.f.q)}</summary><p>${esc(x.f.a)}</p></details>`).join(""):`<div class="target">Nothing matches. Try a word like "HAVING", "NULL" or "dates".</div>`;
+}
+
+let db,cur=-1,day=1,EX=EX1,passed=new Set();
+const $=id=>document.getElementById(id);
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const doneDays=new Set(store.get("sqlbc-done")||[]);
+function loadPassed(){passed=new Set(store.get("sqlbc-d"+day)||[])}
+
+function renderDays(){
+  $("days").innerHTML=PLAN.map((p,i)=>{const n=i+1,ready=!!DAYS[n];
+    return `<button class="day ${n===day?"on":""} ${doneDays.has(n)?"done":""}" ${ready?`data-day="${n}"`:"disabled"} title="Day ${n}: ${p}${ready?"":" (coming soon)"}" aria-current="${n===day}">${doneDays.has(n)?"✓ ":""}D${n}</button>`}).join("")+`<button class="day practice ${day===0?"on":""}" data-practice="1">Weak spots</button>`;
+}
+function showDay(n){
+  day=n;EX=DAYS[n];cur=-1;curEx=null;loadPassed();
+  $("lessonBody").innerHTML=$("tpl"+n).innerHTML;
+  document.querySelectorAll("#lessonBody pre[data-try]").forEach((p,i)=>{const b=document.createElement("button");b.className="trybtn";b.textContent="Try it";b.dataset.tryi=i;p.after(b)});
+  renderDays();renderEx();renderFinish();
+  $("target").textContent="Free practice: try anything.";$("out").innerHTML="";
+  try{location.hash="day-"+n}catch(e){}
+  window.scrollTo({top:0});
+}
+function renderFinish(){
+  const all=passed.size===EX.length,isDone=doneDays.has(day),next=DAYS[day+1];
+  $("finish").innerHTML=`<div class="ex"><div class="ex-head"><span class="ex-title">Finish Day ${day}</span><span class="pill ${isDone?"ok":""}">${isDone?"Complete":passed.size+" of "+EX.length+" passed"}</span></div>
+   <div>${isDone?(next?"Day "+(day+1)+" is ready.":"Day "+(day+1)+" is next. Ask Claude in the chat to add it."):all?"All exercises passed. Mark the day complete to move on.":"Pass every exercise, or mark it complete anyway if you're confident."}</div>
+   <div class="btns">${isDone?"":`<button class="primary" id="markDone">Mark Day ${day} complete</button>`}${next?`<button ${isDone?'class="primary"':""} data-day="${day+1}">Go to Day ${day+1}</button>`:""}<button data-practice="1">Practise weak spots</button></div></div>`;
+}
+function renderEx(){
+  document.querySelector("#lessonBody .exlist").innerHTML=EX.map((e,i)=>`
+    <div class="ex" id="ex${i}">
+      <div class="ex-head"><span class="ex-title">${i+1}. ${e.t}</span><span id="st${i}">${triesPill("L"+day+"-"+i,passed.has(i))}</span></div>
+      <div>${e.q}${e.ordered?" <span class='target'>(order matters)</span>":""}</div>
+      <div class="btns"><button class="primary" data-go="${i}">Work on this</button><button data-hint="${i}">Hint</button><button data-ans="${i}">Show answer</button></div>
+      <div class="reveal" id="rv${i}" hidden></div>
+    </div>`).join("");
+}
+function table(res){
+  if(!res.length)return "<div class='msg info' style='margin:8px'>Query ran. No rows returned.</div>";
+  const {columns,values}=res[0];
+  const shown=values.slice(0,200);
+  return `<table><tr>${columns.map(c=>`<th>${c}</th>`).join("")}</tr>${shown.map(r=>`<tr>${r.map(v=>`<td>${v===null?"<span style='color:var(--muted)'>NULL</span>":String(v).replace(/</g,"&lt;")}</td>`).join("")}</tr>`).join("")}</table>`+(values.length>200?`<div class='target' style='padding:6px 9px'>Showing 200 of ${values.length} rows.</div>`:"");
+}
+function msg(t,k){const m=$("msg");m.className="msg "+k;m.textContent=t}
+function run(){
+  const sql=$("sql").value;
+  if(READONLY.test(sql)){$("out").innerHTML="";msg("This console is read-only. Only SELECT (and WITH) queries run here, so the practice data can't be changed by accident.","bad");return null}
+  try{const res=db.exec(sql);$("out").innerHTML=table(res);
+    const n=res.length?res[0].values.length:0;msg(`${n} row${n===1?"":"s"} returned.`,"info");return res}
+  catch(e){$("out").innerHTML="";msg("Error: "+e.message,"bad");return null}
+}
+const norm=v=>v===null?"∅":typeof v==="number"?String(Math.round(v*100)/100):String(v);
+function errHelp(m){
+  if(/no such column: (\w+)/i.test(m)){const c=m.match(/no such column: (\w+)/i)[1];return /^[A-Z]{3,}$|^[A-Z_]+$/.test(c)?`${C(c)} isn't a column. If it's a value, put it in single quotes: ${C("'"+c+"'")}.`:`There's no column called ${C(c)}. Check the spelling against the Tables box.`}
+  if(/no such table/i.test(m))return "That table doesn't exist. The two tables are customers and transfers.";
+  if(/misuse of aggregate/i.test(m))return "An aggregate (COUNT, SUM...) is in WHERE. Move that condition to HAVING, after GROUP BY.";
+  if(/near "FROM"/i.test(m))return "Something just before FROM is off. Usually a comma after the last column in SELECT.";
+  if(/incomplete input|unrecognized token/i.test(m))return "A quote or bracket isn't closed. Count your ' and ( ).";
+  if(/syntax error/i.test(m))return "SQL can't read the query near that word. Check the clause order: SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT.";
+  return "";
+}
+function check(){
+  if(!curEx){msg("Pick an exercise first with “Work on this”, or start practice in Weak spots.","info");guide([]);return}
+  const e=curEx,sql=$("sql").value,n=bumpAttempts(e);
+  const items=[];
+  if(READONLY.test(sql)){run();return}
+  let mine;try{mine=db.exec(sql);$("out").innerHTML=table(mine)}catch(err){$("out").innerHTML="";
+    if(!attempt.fails&&!attempt.shown)record(e,"wrong");attempt.fails++;
+    msg(`Try ${n}: the query has an error.`,"bad");if(e.lesson!==undefined)$("st"+e.lesson).innerHTML=triesPill(e.id,false);const h=errHelp(err.message);guide([`<div class="focus"><b>Focus on:</b> getting the query to run. Fix the error before anything else.</div>`,`<b>Error:</b> ${esc(err.message)}`,...(h?[h]:[]),...lint(sql,e).filter(l=>!(h&&/aggregate/.test(h)&&/aggregate/.test(l)))],"badg");return}
+  const exp=db.exec(e.a);
+  const rows=r=>r.length?r[0].values.map(x=>x.map(norm)):[];
+  const A=rows(mine),B=rows(exp),cols=(mine[0]||{columns:[]}).columns.length,ecols=(exp[0]||{columns:[]}).columns.length;
+  const key=r=>r.join("|");let ok=false,why="";
+  if(!mine.length&&B.length){why="Your query returned no rows at all.";items.push("No rows usually means a filter can never be true: a misspelled value, wrong capitals, or a date range that doesn't overlap the data.");items.push(...clauseHints(sql,e.a))}
+  else if(cols!==ecols){why=`You returned ${cols} column${cols===1?"":"s"}; the answer has ${ecols}.`;
+    items.push(`List exactly the columns the question asks for, in the order it lists them.`);
+    if(attempt.fails>=1)items.push(`The answer's columns are: ${(exp[0]||{columns:[]}).columns.map(C).join(", ")}.`)}
+  else if(A.length!==B.length){
+    why=`You got ${A.length} row${A.length===1?"":"s"}; the answer has ${B.length}.`;
+    items.push(A.length>B.length?"Too many rows means a filter is missing or too loose (or a GROUP BY splits things too finely, or LIMIT is missing).":"Too few rows means a filter is too strict (or something is grouping rows together that shouldn't be).");
+    items.push(...clauseHints(sql,e.a));
+  } else {
+    let a=A.map(key),b=B.map(key);
+    if(!e.ordered){a=[...a].sort();b=[...b].sort()}
+    if(a.every((x,i)=>x===b[i]))ok=true;
+    else{
+      const sa=[...a].sort(),sb=[...b].sort();
+      if(e.ordered&&sa.every((x,i)=>x===sb[i])){why="Right rows, wrong order.";
+        const rev=[...a].reverse().every((x,i)=>x===b[i]);
+        items.push(rev?"Your order is exactly backwards. Flip ASC/DESC.":"Check your ORDER BY. Read the question's sorting words again, including how to break ties.");
+        if(attempt.fails>=1)items.push(`The answer sorts by: ${C(clauses(e.a)["ORDER BY"]||"")}.`);
+      } else {why="Same number of rows, but some values differ.";
+        const bad=[];for(let c=0;c<ecols;c++){const x=A.map(r=>r[c]).sort().join(),y=B.map(r=>r[c]).sort().join();if(x!==y)bad.push(c)}
+        const names=(mine[0].columns);
+        if(bad.length)items.push(`Column${bad.length>1?"s":""} ${bad.map(c=>`${c+1} (${C(names[c])})`).join(", ")} ${bad.length>1?"have":"has"} different values from the answer. ${bad.length<ecols?"The other columns match, so your filters are probably right; look at how that column is calculated, or the column order.":""}`);
+        if(attempt.fails>=1&&bad.length){const c=bad[0];const ka=new Map(A.map(r=>[r[0],r])),kb=new Map(B.map(r=>[r[0],r]));for(const [k,r] of kb){const m=ka.get(k);if(m&&m[c]!==r[c]){items.push(`Example: for ${C(k)}, the answer has ${C(r[c])} and you have ${C(m[c])}.`);break}}}
+        items.push(...columnDiagnosis(sql,e.a,bad));
+        items.push(...clauseHints(sql,e.a));
+      }
+    }
+  }
+  const lints=[...deepLint(sql,e),...lint(sql,e).filter(l=>!/double quotes/.test(l)||!deepLint(sql,e).some(d=>/Text matching/.test(d)))];
+  if(ok){
+    const clean=!attempt.fails&&!attempt.hint&&!attempt.shown;
+    if(!attempt.shown&&!attempt.done)record(e,clean?"right":"recovered");
+    attempt.done=true;const it=markSolved(e);
+    if(e.lesson!==undefined){passed.add(e.lesson);store.set("sqlbc-d"+day,[...passed]);renderFinish();$("st"+e.lesson).innerHTML=triesPill(e.id,true)}
+    msg(it.solvedIn===1?`Solved in 1 try.${attempt.hint?" (You used the hint.)":""}`:`Solved in ${it.solvedIn} tries. This one will come back in practice so it sticks.`,"ok");
+    guide([...lints.map(l=>"<b>Tidy-up:</b> "+l),`<details><summary>See the model answer explained</summary>${explain(e.a)}</details>`,`<details><summary>Compare your query with the model answer</summary>${compareTable(sql,e.a)}</details>`],"okg");
+    if(day===0&&!$("nextQ2"))$("pq").querySelector(".btns").insertAdjacentHTML("afterbegin",'<button class="primary" id="nextQ2">Next question</button>');
+    return;
+  }
+  if(!attempt.fails&&!attempt.shown)record(e,"wrong");
+  attempt.fails++;const f=attempt.fails;
+  msg(`Try ${n}: not yet. ${why}`,"bad");
+  if(e.lesson!==undefined)$("st"+e.lesson).innerHTML=triesPill(e.id,false);
+  const g=[`<div class="focus"><b>Focus on:</b> ${focusOn(why,items,sql,e)}</div>`,...lints,...items];
+  if(f>=2&&e.hint)g.push(`<b>Hint:</b> ${esc(e.hint)}`);
+  if(f>=3)g.push(`<details ${f===3?"open":""}><summary>A plan in plain English (no code)</summary>${planFor(e.a)}</details>`);
+  if(f>=4)g.push(`<b>Here's how the right result starts:</b>${previewRows(exp,3)}`);
+  if(f>=5){const r=revealClauses(e.a,f-4);g.push(`<b>The answer, part by part:</b><pre class="ans">${esc(r.shown.join("\n"))}${r.left>0?"\n...":""}</pre>${r.left>0?`<span class="target">${r.left} more part${r.left>1?"s":""} will show if the next try is wrong.</span>`:""}`);
+    if(r.left<=0&&!attempt.shown){attempt.shown=true;record(e,"shown")}}
+  const ladder=["what's wrong","+ hint","+ plain-English plan","+ preview of the result","+ answer, part by part"];
+  g.push(`<div class="ladder">${ladder.map((l,i)=>`<span class="${i<Math.min(f,5)?"on":""}">${i===4?"5+":i+1}. ${l}</span>`).join("")}</div>`);
+  guide(g,"badg");
+}
+document.addEventListener("click",ev=>{
+  const t=ev.target.closest("button")||ev.target;
+  if(t.dataset.day){showDay(+t.dataset.day);return}
+  if(t.dataset.practice){showPractice();return}
+  if(t.id==="nextQ"||t.id==="nextQ2"){loadQuestion();return}
+  if(t.dataset.phint){if(!attempt.hint){attempt.hint=true;record(curEx,"hint")}const r=$("prv");r.hidden=false;r.innerHTML="<b>Hint:</b> "+esc(curEx.hint)+`<details><summary>Still stuck? A plan in plain English</summary>${planFor(curEx.a)}</details>`;return}
+  if(t.dataset.pans){if(!attempt.shown){attempt.shown=true;record(curEx,"shown")}const r=$("prv");r.hidden=false;r.innerHTML=explain(curEx.a)+compareTable($("sql").value,curEx.a);return}
+  if(t.dataset.tryi!==undefined){const p=document.querySelectorAll("#lessonBody pre[data-try]")[+t.dataset.tryi];$("sql").value=p.innerText.trim();if(cur>=0||curEx){cur=-1;curEx=null;$("target").textContent="Free practice: try anything."}run();if(window.innerWidth<=900)$("sql").scrollIntoView({behavior:"smooth",block:"start"});return}
+  if(t.id==="markDone"){doneDays.add(day);store.set("sqlbc-done",[...doneDays]);renderDays();renderFinish();return}
+  if(t.dataset.go){cur=+t.dataset.go;curEx={...EX[cur],id:"L"+day+"-"+cur,tags:EXTAGS[day+"-"+cur],lesson:cur};attempt={fails:itemRec(curEx.id).cur||0,hint:false,shown:false,resumed:!!itemRec(curEx.id).cur};$("target").innerHTML=`<b>Day ${day}, exercise ${cur+1}:</b> ${EX[cur].q}`;$("sql").value="";$("sql").focus();msg(attempt.resumed?`You've had ${attempt.fails} ${attempt.fails===1?"try":"tries"} at this one. Help picks up where you left off.`:"Write your query, then Run or Check.","info");$("out").innerHTML="";guide([])}
+  if(t.dataset.hint){const k=+t.dataset.hint;record({...EX[k],id:"L"+day+"-"+k,tags:EXTAGS[day+"-"+k]},"hint");if(curEx&&curEx.lesson===k)attempt.hint=true;const r=$("rv"+t.dataset.hint);r.hidden=false;r.innerHTML="<b>Hint:</b> "+esc(EX[t.dataset.hint].hint)+`<details><summary>Still stuck? A plan in plain English</summary>${planFor(EX[t.dataset.hint].a)}</details>`}
+  if(t.dataset.ans){const k=+t.dataset.ans;record({...EX[k],id:"L"+day+"-"+k,tags:EXTAGS[day+"-"+k]},"shown");if(curEx&&curEx.lesson===k)attempt.shown=true;const r=$("rv"+t.dataset.ans);r.hidden=false;r.innerHTML=explain(EX[t.dataset.ans].a)+(curEx&&curEx.lesson===+t.dataset.ans?compareTable($("sql").value,EX[t.dataset.ans].a):"")}
+});
+$("run").onclick=run;$("check").onclick=check;
+$("reset").onclick=()=>{db.close();db=new SQLmod.Database();db.run(buildSQL());msg("Practice data rebuilt from scratch.","ok");$("out").innerHTML="";guide([])};
+$("clear").onclick=()=>{cur=-1;curEx=null;guide([]);$("target").textContent="Free practice: try anything.";msg("Free practice mode.","info")};
+$("sql").addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();run()}});
+(function(){if(location.hash==="#practice"){showPractice();return}let n=1;try{const m=location.hash.match(/day-(\d+)/);if(m&&DAYS[+m[1]])n=+m[1];else{for(const d of Object.keys(DAYS).map(Number)){if(!doneDays.has(d)){n=d;break}n=d}}}catch(e){}showDay(n)})();
+
+// ---- Ask Claude tutor ----
+let lastCheck={sql:"",feedback:""},tturns=[],tctl=null,tkey=null;
+const TUTOR_RULES=`You are a patient SQL tutor inside a practice page. The learner is rusty at SQL and preparing for a Wise payments product operations interview, where PostgreSQL is likely. This page runs SQLite on a mock payments database:
+customers(id, name, country, segment, signup_date)
+transfers(id, customer_id, source_currency, target_currency, amount, fee, status, failure_reason, created_at, completed_at)
+amount and fee are in the source currency. status is COMPLETED, FAILED, PENDING or CANCELLED. failure_reason is NULL unless FAILED. Dates are text like '2026-10-15 14:03:00'.
+How to answer:
+- Plain, friendly English for a beginner. Short paragraphs. Explain WHY, not just what.
+- Use small SQL snippets in triple-backtick code blocks when they help.
+- If the learner hasn't solved the question and asks what's wrong, point them to the specific part to fix and why, before handing over a full solution, unless they ask for the solution.
+- Mention where PostgreSQL differs from SQLite when relevant.
+- You may call run_query to run a read-only SELECT on the page's data to show real results; keep queries small.
+- Never use em dashes. Keep answers under about 250 words unless asked for more.`;
+function tutorContext(){
+  const parts=[];
+  if(curEx){parts.push(`CURRENT QUESTION: ${curEx.q}${curEx.ordered?" (order matters)":""}`);parts.push(`MODEL ANSWER:\n${curEx.a}`);
+    const it=itemRec(curEx.id||"");parts.push(`LEARNER STATUS: ${it.solvedIn?`solved in ${it.solvedIn} tries`:it.cur?`${it.cur} wrong tries so far, not solved yet`:"not attempted yet"}`)}
+  else parts.push("CURRENT QUESTION: none (free practice).");
+  if(day>0){const l=document.querySelector("#lessonBody h2");if(l)parts.push("LESSON: Day "+day+", "+l.textContent)}
+  const sql=$("sql").value.trim();if(sql)parts.push(`LEARNER'S QUERY IN THE CONSOLE:\n${sql}`);
+  if(lastCheck.feedback)parts.push(`LAST CHECK FEEDBACK SHOWN TO THE LEARNER:\n${lastCheck.feedback.slice(0,1500)}`);
+  return parts.join("\n\n");
+}
+function mdLite(t){
+  const blocks=String(t).split(/```(?:sql)?\n?/);
+  return blocks.map((b,i)=>i%2?`<pre>${esc(b.trim())}</pre>`:esc(b).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").split(/\n{2,}/).map(p=>p.trim()?`<p>${p.replace(/\n- /g,"<br>• ").replace(/^- /,"• ").replace(/\n/g,"<br>")}</p>`:"").join("")).join("");
+}
+function renderChat(streaming){
+  $("tchat").innerHTML=tturns.map((m,i)=>`<div class="bubble ${m.role}">${m.role==="user"?esc(m.show||m.content):mdLite(m.content)}</div>`).join("")+(streaming?`<div class="bubble assistant" id="tlive"><span class="target">Thinking…</span></div>`:"");
+  $("tchat").scrollTop=$("tchat").scrollHeight;
+}
+function resetTutorIfMoved(){const k=curEx?curEx.id:"free";if(k!==tkey){tkey=k;tturns=[];renderChat(false);$("tnote").textContent=""}}
+async function ask(text){
+  const sample=window._sample;if(!sample||!text.trim())return;
+  resetTutorIfMoved();
+  const ctxMsg=`${TUTOR_RULES}\n\n---\nCONTEXT (refreshed each message):\n${tutorContext()}`;
+  tturns.push({role:"user",content:text.trim(),show:text.trim()});renderChat(true);
+  $("tq").value="";$("tsend").disabled=true;$("tstop").hidden=false;$("tnote").textContent="";
+  tctl=new AbortController();
+  const convo=tturns.slice(-10).map(m=>({role:m.role,content:m.content}));
+  const input=[{role:"user",content:ctxMsg},...convo];
+  const tools=[{name:"run_query",description:"Runs one read-only SELECT (or WITH) query on the page's practice database and returns up to 15 rows as {columns, rows, total}. Use it to show the learner real results.",
+    inputSchema:{type:"object",properties:{sql:{type:"string",description:"A single SELECT query"}},required:["sql"]},
+    execute:({sql})=>{const q=String(sql||"");if(READONLY.test(q)||!/^\s*(select|with)\b/i.test(q))throw new Error("Only SELECT queries are allowed.");const r=db.exec(q);if(!r.length)return {columns:[],rows:[],total:0};return {columns:r[0].columns,rows:r[0].values.slice(0,15),total:r[0].values.length}}}];
+  let lim=null;try{lim=await sample.limits()}catch(e){}
+  try{
+    const res=await sample(input,{cache:false,signal:tctl.signal,...(lim&&lim.tools?{tools}:{}),onText:({text})=>{const el=$("tlive");if(el)el.innerHTML=mdLite(text)}});
+    tturns.push({role:"assistant",content:res.text});renderChat(false);
+    if(res.truncated)$("tnote").textContent="The answer was cut short. Ask a narrower follow-up.";
+  }catch(e){
+    if(e.text){tturns.push({role:"assistant",content:e.text+"\n\n(interrupted)"})}else{tturns.pop()}
+    renderChat(false);
+    const copy={not_granted:"Asking Claude isn't allowed for this page. You can change that in the page's permissions.",sampling_disabled:"Asking Claude isn't available on this account.",rate_limited:"Too many questions in a short time. Wait a minute and ask again.",session_expired:"You've been signed out. Sign in again to ask.",refused:"Claude couldn't answer that one. Try asking differently.",cancelled:""}[e.code];
+    $("tnote").textContent=copy??"Something went wrong reaching Claude. Try again.";
+    if(e.code==="not_granted"||e.code==="sampling_disabled")$("tutor").hidden=true;
+  }finally{$("tsend").disabled=false;$("tstop").hidden=true;tctl=null}
+}
+(async()=>{try{const s=await window.claude?.use?.("sample");if(s){window._sample=s;$("tutor").hidden=false}}catch(e){}})();
+$("tsend").onclick=()=>ask($("tq").value);
+$("tq").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ask($("tq").value)}});
+$("tstop").onclick=()=>tctl&&tctl.abort();
+$("tclear").onclick=()=>{tturns=[];renderChat(false);$("tnote").textContent=""};
+document.addEventListener("click",ev=>{const b=ev.target.closest("[data-ask]");if(b)ask(b.dataset.ask)});
+
+window.addEventListener("hashchange",()=>{const m=location.hash.match(/day-(\d+)/);if(location.hash==="#practice"&&day!==0)showPractice();else if(m&&DAYS[+m[1]]&&+m[1]!==day)showDay(+m[1])});
+$("faqq").addEventListener("input",renderFaq);renderFaq();
+let SQLmod;initSqlJs().then(SQL=>{SQLmod=SQL;db=new SQL.Database();db.run(buildSQL());msg("Database ready. Ctrl+Enter runs your query.","ok");run()})
+ .catch(e=>msg("The practice database didn't load: "+e.message,"bad"));
+</script>
+
+</body>
+</html>
