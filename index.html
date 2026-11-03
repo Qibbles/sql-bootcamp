@@ -168,6 +168,8 @@ details.schema summary{cursor:pointer;font-weight:700}
     <label for="tq" class="target">Your question</label>
     <textarea id="tq" class="tq" placeholder="e.g. Why do we need HAVING here instead of WHERE?"></textarea>
     <div class="btns"><button class="primary" id="tsend">Ask</button><button id="tstop" hidden>Stop</button><button id="tclear">New conversation</button></div>
+    <div class="btns" id="tcopyrow" hidden><button class="primary" id="tcopy">Copy question for your AI</button></div>
+    <textarea id="tcopybox" class="tq" readonly hidden aria-label="Prompt to paste into your AI"></textarea>
     <div class="target" id="tnote"></div>
   </div>
   <div class="panel" id="faq">
@@ -748,7 +750,7 @@ function explain(sql){
   if(p["ORDER BY"]){const ob=splitTop(p["ORDER BY"],/^\s*,\s*/);
     steps.push(`<b>ORDER BY</b>: sort the result${ob.length>1?". The first column decides the order, and each later one only breaks ties in the one before":""}:<ul>${ob.map(o=>{const d=/\sDESC$/i.test(o);const col=o.replace(/\s+(ASC|DESC)$/i,"");return `<li>${C(col)}, ${d?"largest / latest / Z first (DESC)":"smallest / earliest / A first"}</li>`}).join("")}</ul>`)}
   if(p.LIMIT)steps.push(`<b>LIMIT ${esc(p.LIMIT)}</b>: keep only the first ${esc(p.LIMIT)} rows after sorting.`);
-  return `<pre class="ans">${esc(sql)}</pre>${window._sample?`<button class="askbtn" data-ask="Why is the model answer written this way? Explain each part and why it is needed.">Still unsure? Ask Claude why</button>`:""}<div class="steps-h">How it works, in the order the database runs it</div><ol class="steps">${steps.map(s=>`<li>${s}</li>`).join("")}</ol>`;
+  return `<pre class="ans">${esc(sql)}</pre><button class="askbtn" data-ask="Why is the model answer written this way? Explain each part and why it is needed.">${window._sample?"Still unsure? Ask Claude why":"Still unsure? Copy a question for your AI"}</button><div class="steps-h">How it works, in the order the database runs it</div><ol class="steps">${steps.map(s=>`<li>${s}</li>`).join("")}</ol>`;
 }
 
 // ---- check guidance ----
@@ -793,7 +795,7 @@ function focusOn(why,items,sql,e){
   if(/values differ/.test(why))return `how each column is calculated in ${C("SELECT")} (the right function? rounded?), and whether your ${C("WHERE")} matches the question exactly.`;
   return "the part of the question your result doesn't match yet.";
 }
-function guide(items,kind){try{renderFaq()}catch(e){}lastCheck={sql:$("sql").value,feedback:items.map(i=>String(i).replace(/<[^>]+>/g," ").replace(/\s+/g," ")).join("\n")};const g=$("guide");if(!items.length){g.hidden=true;g.innerHTML="";return}g.hidden=false;g.className="guide "+(kind||"");g.innerHTML=items.map(i=>`<div class="gi">${i}</div>`).join("")}
+function guide(items,kind){try{renderFaq()}catch(e){}lastCheck={sql:$("sql").value,feedback:items.filter(i=>!/class="ladder"/.test(String(i))).map(i=>String(i).replace(/<[^>]+>/g," ").replace(/\s+/g," ")).join("\n")};const g=$("guide");if(!items.length){g.hidden=true;g.innerHTML="";return}g.hidden=false;g.className="guide "+(kind||"");g.innerHTML=items.map(i=>`<div class="gi">${i}</div>`).join("")}
 function itemRec(id){const st=stats();return st.items[id]||{}}
 function bumpAttempts(ex){if(!ex.id)return 0;const st=stats();const it=st.items[ex.id]||(st.items[ex.id]={box:0,due:0,tries:0,wrong:0});it.attempts=(it.attempts||0)+1;it.cur=(it.cur||0)+1;saveStats(st);return it.cur}
 function markSolved(ex){const st=stats();const it=st.items[ex.id]||(st.items[ex.id]={box:0,due:0,tries:0,wrong:0});it.solvedIn=it.cur||1;it.best=Math.min(it.best||99,it.solvedIn);it.solves=(it.solves||0)+1;it.cur=0;saveStats(st);return it}
@@ -1087,12 +1089,25 @@ async function ask(text){
     if(e.code==="not_granted"||e.code==="sampling_disabled")$("tutor").hidden=true;
   }finally{$("tsend").disabled=false;$("tstop").hidden=true;tctl=null}
 }
-(async()=>{try{const s=await window.claude?.use?.("sample");if(s){window._sample=s;$("tutor").hidden=false}}catch(e){}})();
+function offlineTutor(){
+  $("tutor").hidden=false;$("tutor").querySelector("h4").textContent="Ask an AI";
+  $("tctx").innerHTML="Have a question? Pick one or type your own, then copy it. It includes the question you're on, the model answer, your query and the feedback you got, so you can paste it straight into ChatGPT, Claude, Gemini or any AI chat.";
+  ["tsend","tstop","tclear"].forEach(id=>$(id).hidden=true);$("tchat").hidden=true;$("tcopyrow").hidden=false;
+}
+function buildCopyPrompt(q){return `${TUTOR_RULES.replace(/\n- You may call run_query[^\n]*/,"")}\n\n---\nCONTEXT:\n${tutorContext()}\n\n---\nMY QUESTION:\n${q}`}
+async function copyPrompt(q){
+  const text=buildCopyPrompt(q||$("tq").value||"Why is the model answer written the way it is? Walk me through it like I'm new to SQL.");
+  const box=$("tcopybox");box.value=text;
+  try{await navigator.clipboard.writeText(text);box.hidden=true;$("tnote").textContent="Copied. Paste it into your AI chat."}
+  catch(e){box.hidden=false;box.focus();box.select();$("tnote").textContent="Your browser blocked copying. The text is selected below: press Ctrl+C (Cmd+C on Mac)."}
+}
+$("tcopy").onclick=()=>copyPrompt($("tq").value);
+(async()=>{let s=null;try{s=await window.claude?.use?.("sample")}catch(e){}if(s){window._sample=s;$("tutor").hidden=false}else offlineTutor()})();
 $("tsend").onclick=()=>ask($("tq").value);
-$("tq").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ask($("tq").value)}});
+$("tq").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();window._sample?ask($("tq").value):copyPrompt($("tq").value)}});
 $("tstop").onclick=()=>tctl&&tctl.abort();
 $("tclear").onclick=()=>{tturns=[];renderChat(false);$("tnote").textContent=""};
-document.addEventListener("click",ev=>{const b=ev.target.closest("[data-ask]");if(b)ask(b.dataset.ask)});
+document.addEventListener("click",ev=>{const b=ev.target.closest("[data-ask]");if(!b)return;if(window._sample)ask(b.dataset.ask);else{$("tq").value=b.dataset.ask;copyPrompt(b.dataset.ask)}});
 
 window.addEventListener("hashchange",()=>{const m=location.hash.match(/day-(\d+)/);if(location.hash==="#practice"&&day!==0)showPractice();else if(m&&DAYS[+m[1]]&&+m[1]!==day)showDay(+m[1])});
 $("faqq").addEventListener("input",renderFaq);renderFaq();

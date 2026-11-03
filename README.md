@@ -36,6 +36,38 @@ Want your own copy instead?
 - **Netlify / Vercel / Cloudflare Pages**: drag the folder in, or connect the repo. No build step.
 - **Locally**: `python3 -m http.server` in this folder, then open http://localhost:8000.
 
+## Ask an AI tutor while you practise
+
+The page has an **Ask** panel beside the console for "why is the answer like this?" questions. How it works depends on where you open the page.
+
+### Anywhere (including the hosted link): copy and paste into any AI
+
+On the hosted site, or a downloaded copy, the panel is called **Ask an AI**. Pick a question (or type your own) and click **Copy question for your AI**. It copies a ready-made prompt with:
+
+- the question you're working on and the model answer
+- your query and the feedback the checker gave you
+- instructions to explain things simply, for a beginner
+
+Paste it into **ChatGPT, Claude, Gemini** or any AI chat. Nothing is sent anywhere until you paste it yourself.
+
+### Inside Claude: a built-in tutor
+
+If you use [Claude](https://claude.ai), you can add the page to your own account as an **artifact**. The tutor then answers inside the page, with follow-up questions, and can run queries on the practice data to show you results.
+
+1. Download [`index.html`](index.html) (open it, then use the download button on GitHub).
+2. Start a new chat in Claude and attach the file.
+3. Send this message:
+
+   > Publish this HTML file as an artifact exactly as it is, without changing the code. Enable the capability that lets the page ask Claude questions (the "sample" capability), so its Ask Claude panel works.
+
+4. Open the artifact. The first time you ask a question, Claude asks your permission. Each question uses your own Claude usage, like a normal chat message.
+
+This needs a Claude plan where artifacts can use Claude from inside the page. If the panel says "Ask an AI" with a copy button instead, that feature isn't available in your account, and copy and paste still works.
+
+### ChatGPT and others
+
+Other assistants can't run the built-in tutor, because the page talks to Claude's artifact runtime. Use the hosted link (or your own copy) and the **Copy question for your AI** button to ask ChatGPT or any other assistant.
+
 ## Curriculum
 
 | Day | Topic | Status |
@@ -59,7 +91,7 @@ Want your own copy instead?
 
 - The practice database is **SQLite**, generated in the page from a fixed seed, so everyone gets the same data and the checker's answers are always consistent. Lessons point out where **PostgreSQL** differs.
 - All data is made up.
-- The "Ask Claude" tutor panel only appears when the page is opened inside Claude (claude.ai). Everywhere else it stays hidden and everything else works the same.
+- The built-in "Ask Claude" tutor only works when the page is published as a Claude artifact. Everywhere else the panel becomes "Ask an AI", which copies a ready-made prompt for any AI chat.
 
 ## License
 
