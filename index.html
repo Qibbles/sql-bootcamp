@@ -418,6 +418,7 @@ WHERE status = 'FAILED'
   AND created_at &lt; '2026-11-01'
 ORDER BY amount DESC
 LIMIT 5;</pre>
+  <p>Only 2 rows came back, not 5. That's fine: only 2 transfers match every condition, and <code>LIMIT 5</code> means "at most 5", not "exactly 5".</p>
 
   <h3>12. Common errors and what they mean</h3>
   <div class="tablewrap"><table class="ref">
@@ -617,22 +618,22 @@ GROUP BY source_currency;</pre>
   <p>It works like an IF formula in a spreadsheet. Here every SGD transfer gets a size label:</p>
 <pre data-try>SELECT id, amount,
        CASE
-         WHEN amount &lt; 100  THEN 'small'
+         WHEN amount &lt; 400  THEN 'small'
          WHEN amount &lt; 1000 THEN 'medium'
          ELSE 'large'
        END AS size
 FROM transfers
 WHERE source_currency = 'SGD';</pre>
-  <p>Check the result: amounts under 100 say small, under 1,000 say medium, the rest say large.</p>
+  <p>Check the result: amounts under 400 say small, 400 to 999.99 say medium, the rest say large.</p>
   <ul>
-    <li>The database checks each <code>WHEN</code> from top to bottom and <b>stops at the first one that's true</b>. That's why the second line only needs <code>amount &lt; 1000</code>: anything under 100 was already caught by the first line.</li>
+    <li>The database checks each <code>WHEN</code> from top to bottom and <b>stops at the first one that's true</b>. That's why the second line only needs <code>amount &lt; 1000</code>: anything under 400 was already caught by the first line.</li>
     <li><code>ELSE</code> catches everything left. Without it, unmatched rows get NULL.</li>
     <li>Always finish with <code>END</code>, and name it with <code>AS</code>.</li>
   </ul>
 
   <h3>2. Grouping by a label</h3>
   <p>Once a CASE has a name, you can group by it like any column. "How many SGD transfers are small, medium and large?":</p>
-<pre data-try>SELECT CASE WHEN amount &lt; 100 THEN 'small'
+<pre data-try>SELECT CASE WHEN amount &lt; 400 THEN 'small'
             WHEN amount &lt; 1000 THEN 'medium'
             ELSE 'large' END AS size,
        COUNT(*) AS transfers
@@ -684,7 +685,7 @@ FROM transfers;</pre>
   <p>Read the rate from the inside out: count the failures, × 100.0, ÷ the total, round to 1 decimal. Check it against the first two columns with a calculator.</p>
 
   <h3>5. Why 100.0 and not 100</h3>
-  <p>When both sides of a division are whole numbers, SQL does whole-number division and throws the decimals away. So 115 ÷ 1500 becomes 0, not 0.0767. Writing <code>100.0</code> makes the calculation use decimals from the start:</p>
+  <p>When both sides of a division are whole numbers, SQL does whole-number division and throws the decimals away. Here the sum is 115 × 100 = 11,500, then 11,500 ÷ 1,500. The true answer is 7.67, but whole-number division gives just 7. (If you divided first, 115 ÷ 1,500 would even come out as 0.) Writing <code>100.0</code> makes the calculation use decimals from the start:</p>
   <div class="vs">
     <div class="side a"><div class="vs-h">Whole numbers only</div>
 <pre data-try>SELECT SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) * 100 / COUNT(*) AS rate
@@ -715,7 +716,7 @@ GROUP BY target_currency
 HAVING COUNT(*) &gt;= 50
    AND SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) &gt; 7
 ORDER BY failure_rate DESC;</pre>
-  <p>Repeating a long formula is clumsy. On Day 8 you'll learn CTEs, which let you calculate it once and refer to it by name.</p>
+  <p>Repeating a long formula is clumsy. On Days 8 and 9 you'll learn CTEs, which let you calculate it once, give it a name, and filter on that name.</p>
 
   <h3>8. Common errors</h3>
   <div class="tablewrap"><table class="ref">
@@ -771,7 +772,7 @@ GROUP BY c.country;</pre>
   <p>The order of work is now: FROM and JOIN build the combined rows, then WHERE, GROUP BY and the rest.</p>
 
   <h3>4. JOIN vs LEFT JOIN</h3>
-  <p>We have 8 customers who signed up recently and haven't sent anything yet (ids 121 to 128). Both queries below look at customers 120 to 123: customer 120 has transfers, 121 to 123 don't. Sorted by id, highest first:</p>
+  <p>Customers 121 to 128 signed up recently and haven't sent anything yet, so they have no rows in transfers. To see what each join does with them, both queries below look at just four customers: <b>120</b>, who has transfers, and <b>121, 122 and 123</b>, who don't. Results are sorted by customer id, highest first, so the customers without transfers show up at the top.</p>
   <div class="vs">
     <div class="side a"><div class="vs-h">JOIN (also called INNER JOIN)</div>
 <pre data-try data-rows="6">SELECT c.id, c.name, t.id AS transfer_id
@@ -825,7 +826,7 @@ FROM customers c
 LEFT JOIN transfers t ON t.customer_id = c.id
 WHERE t.status = 'FAILED'
 GROUP BY c.id;</pre>
-    <p class="vs-why">Fewer than 128 rows. Customers with no failures had status NULL or something else, so WHERE removed them. The LEFT JOIN has quietly become a normal JOIN.</p></div>
+    <p class="vs-why">Fewer than 128 rows. For customers with no failures, every joined row has a status like COMPLETED (or NULL, for customers with no transfers at all). WHERE throws those rows away, so those customers vanish. The LEFT JOIN has quietly become a normal JOIN.</p></div>
     <div class="side b"><div class="vs-h">Condition in ON</div>
 <pre data-try>SELECT c.id, COUNT(t.id) AS failed
 FROM customers c
@@ -1266,7 +1267,7 @@ total AS (SELECT SUM(volume) AS all_volume FROM vol)
 SELECT v.target_currency, ROUND(v.volume * 100.0 / t.all_volume, 1) AS share_pct
 FROM vol v, total t
 ORDER BY share_pct DESC;</pre>
-  <p><code>FROM vol v, total t</code> (with a comma and no ON) pairs every row of vol with every row of total. That's only safe because total has exactly one row. The shares add up to 100. Day 11 shows a shorter way to do this.</p>
+  <p><code>FROM vol v, total t</code> (with a comma and no ON) pairs every row of vol with every row of total. That's only safe because total has exactly one row. The shares add up to 100 (give or take 0.1 from rounding). Day 11 shows a shorter way to do this.</p>
 
   <h3>5. Comparing two periods side by side</h3>
   <p>"Did failures go up or down from Q2 to Q3?" Step 1 labels each row with its quarter. The final query counts each quarter in its own column, using conditional counts:</p>
@@ -1281,7 +1282,7 @@ SELECT failure_reason,
        SUM(CASE WHEN q = 'Q3' THEN 1 ELSE 0 END) AS q3
 FROM labelled
 GROUP BY failure_reason;</pre>
-  <p>Turning rows (one per quarter) into columns (q2, q3) is called <b>pivoting</b>. It comes up a lot, because people like comparisons side by side.</p>
+  <p>Turning rows (one per quarter) into columns (q2, q3) is called <b>pivoting</b>. It comes up a lot, because people like comparisons side by side. Failures outside Q2 and Q3 get a NULL label and land in neither column.</p>
 
   <h3>6. Talking through a chain in an interview</h3>
   <p>Say the steps before writing them: "First I'll get monthly counts, then turn them into rates, then filter." Write one step, run it, check it, then add the next. If you run out of time, two correct steps still show clear thinking.</p>
@@ -1354,12 +1355,13 @@ ORDER BY target_currency, amount DESC;</pre>
 <pre data-try data-expect="error">SELECT id,
        ROW_NUMBER() OVER (ORDER BY amount DESC) AS rn
 FROM transfers
-WHERE rn &lt;= 2;</pre>
+WHERE source_currency = 'SGD' AND rn &lt;= 2;</pre>
     <p class="vs-why">WHERE runs before SELECT, so <code>rn</code> doesn't exist yet. Window functions are worked out in SELECT.</p></div>
     <div class="side b"><div class="vs-h">Wrap it in a CTE first</div>
 <pre data-try>WITH r AS (
   SELECT id, amount, ROW_NUMBER() OVER (ORDER BY amount DESC) AS rn
   FROM transfers
+  WHERE source_currency = 'SGD'
 )
 SELECT id, amount FROM r WHERE rn &lt;= 2;</pre>
     <p class="vs-why">The CTE finishes first, so <code>rn</code> is a normal column you can filter on.</p></div>
@@ -1392,7 +1394,7 @@ FROM transfers
 GROUP BY customer_id
 ORDER BY rnk, customer_id
 LIMIT 10;</pre>
-  <p>GROUP BY runs first and makes one row per customer. Then the window ranks those rows.</p>
+  <p>GROUP BY runs first and makes one row per customer. Then the window ranks those rows. Look at the ties: customers 71 and 103 share rank 2, so the next rank is 4.</p>
 
   <div class="takeaways"><h3>Key takeaways</h3><ul>
     <li>GROUP BY collapses rows; a window function keeps them and adds a column.</li>
@@ -1465,7 +1467,7 @@ SELECT month, n, SUM(n) OVER (ORDER BY month) AS running_total
 FROM monthly ORDER BY month;</pre>
     <p class="vs-why">With ORDER BY: each row adds up everything up to and including itself.</p></div>
   </div>
-  <p>The left version is handy too: it's the short way to do Day 9's "share of total". <code>n * 100.0 / SUM(n) OVER ()</code> gives each row's share without a separate step.</p>
+  <p>The first version is handy too: it's the short way to do Day 9's "share of total". <code>n * 100.0 / SUM(n) OVER ()</code> gives each row's share without a separate step.</p>
 
   <h3>4. Moving averages</h3>
   <p>A moving average smooths out bumpy numbers by averaging each row with a few before it. You tell the window how many rows to include with <code>ROWS BETWEEN</code>:</p>
@@ -1482,7 +1484,7 @@ ORDER BY month;</pre>
   <h3>5. Running totals per group</h3>
   <p>Add PARTITION BY and the running total restarts for each group. "Each customer's cumulative SGD sent":</p>
 <pre data-try data-rows="8">SELECT customer_id, created_at, amount,
-       SUM(amount) OVER (PARTITION BY customer_id ORDER BY created_at) AS cumulative
+       ROUND(SUM(amount) OVER (PARTITION BY customer_id ORDER BY created_at), 2) AS cumulative
 FROM transfers
 WHERE source_currency = 'SGD' AND customer_id &lt;= 3 AND created_at &gt;= '2026-07-01'
 ORDER BY customer_id, created_at;</pre>
@@ -1504,7 +1506,7 @@ ORDER BY customer_id, created_at;</pre>
 
   <h3>1. NULL means "unknown", not "nothing"</h3>
   <div class="plain"><b>In plain English:</b> NULL is a blank. Any comparison with a blank is "don't know", and WHERE only keeps rows where the answer is a definite yes.</div>
-  <p>Question: "how many transfers did <i>not</i> fail for an insufficient-balance reason?" The obvious query misses rows:</p>
+  <p>Question: "how many transfers do <i>not</i> have the failure reason INSUFFICIENT_FUNDS?" That should be almost all of them, since most transfers never failed. The obvious query misses rows:</p>
   <div class="vs">
     <div class="side a"><div class="vs-h">Using &lt;&gt; only</div>
 <pre data-try>SELECT COUNT(*)
@@ -1549,7 +1551,7 @@ ORDER BY sent, c.id;</pre>
     <p class="vs-why">Gives 3 and 42. The decimals are cut off, not rounded.</p></div>
     <div class="side b"><div class="vs-h">One decimal number</div>
 <pre data-try>SELECT 7 / 2.0 AS result, 3 * 100.0 / 7 AS pct;</pre>
-    <p class="vs-why">Gives 3.5 and 42.857… Just one decimal number in the sum is enough.</p></div>
+    <p class="vs-why">Gives 3.5 and 42.857… Just one decimal number in the calculation is enough.</p></div>
   </div>
   <p>Rule of thumb: in any rate or percentage, write <code>100.0</code>, never <code>100</code>.</p>
   <p>And dividing by zero? SQLite returns NULL; PostgreSQL gives an error. Guard it with <code>NULLIF(x, 0)</code>, which turns a 0 into NULL so the division quietly returns NULL instead:</p>
