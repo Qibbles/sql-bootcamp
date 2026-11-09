@@ -151,6 +151,7 @@ textarea{width:100%;min-height:150px;resize:vertical;font:.9rem/1.5 var(--mono);
 details.schema summary{cursor:pointer;font-weight:700}
 .schema pre{font-size:.8rem}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+pre,code,textarea{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
 </style>
 
 <header class="top">
@@ -770,22 +771,22 @@ GROUP BY c.country;</pre>
   <p>The order of work is now: FROM and JOIN build the combined rows, then WHERE, GROUP BY and the rest.</p>
 
   <h3>4. JOIN vs LEFT JOIN</h3>
-  <p>We have 8 customers who signed up recently and haven't sent anything yet (ids 121 to 128). Watch what happens to them:</p>
+  <p>We have 8 customers who signed up recently and haven't sent anything yet (ids 121 to 128). Both queries below look at customers 120 to 123: customer 120 has transfers, 121 to 123 don't. Sorted by id, highest first:</p>
   <div class="vs">
     <div class="side a"><div class="vs-h">JOIN (also called INNER JOIN)</div>
-<pre data-try>SELECT c.id, c.name, t.id AS transfer_id
+<pre data-try data-rows="6">SELECT c.id, c.name, t.id AS transfer_id
 FROM customers c
 JOIN transfers t ON t.customer_id = c.id
-WHERE c.id &gt;= 119
-ORDER BY c.id;</pre>
-    <p class="vs-why">Only customers 119 and 120 appear. Customers with no matching transfer are dropped, because JOIN keeps only rows that match on both sides.</p></div>
+WHERE c.id BETWEEN 120 AND 123
+ORDER BY c.id DESC, t.id;</pre>
+    <p class="vs-why">Only customer 120 appears (once per transfer they made). Customers 121, 122 and 123 have no transfers, so there's nothing to match and JOIN drops them.</p></div>
     <div class="side b"><div class="vs-h">LEFT JOIN</div>
-<pre data-try>SELECT c.id, c.name, t.id AS transfer_id
+<pre data-try data-rows="6">SELECT c.id, c.name, t.id AS transfer_id
 FROM customers c
 LEFT JOIN transfers t ON t.customer_id = c.id
-WHERE c.id &gt;= 119
-ORDER BY c.id;</pre>
-    <p class="vs-why">Customers 121 to 128 are kept, with NULL in transfer_id. LEFT JOIN keeps every row from the first (left) table, matched or not.</p></div>
+WHERE c.id BETWEEN 120 AND 123
+ORDER BY c.id DESC, t.id;</pre>
+    <p class="vs-why">Customers 123, 122 and 121 are kept, with NULL in transfer_id, followed by customer 120's transfers. LEFT JOIN keeps every row from the first (left) table, matched or not.</p></div>
   </div>
   <p><b>When to use which:</b> JOIN when you only want rows that have a match (most of the time). LEFT JOIN when the question says "every customer", "including those with none", or "who hasn't…".</p>
 
